@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	dboperator2 "github.com/onlyzzg/dbutil/dboperator"
-	"github.com/onlyzzg/dbutil/gormx"
+	dboperator2 "github.com/jasonlabz/dbutil/dboperator"
+	"github.com/jasonlabz/dbutil/gormx"
 )
 
 var dsMap = make(map[gormx.DBType]*DS)

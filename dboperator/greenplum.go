@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/onlyzzg/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/gormx"
 )
 
 func NewGPOperator() IOperator {

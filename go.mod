@@ -1,4 +1,4 @@
-module github.com/onlyzzg/dbutil
+module github.com/jasonlabz/dbutil
 
 go 1.20
 
