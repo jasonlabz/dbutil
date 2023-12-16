@@ -41,8 +41,6 @@ func GetDBByConfig(config *Config) (*gorm.DB, error) {
 	switch config.DBType {
 	case DBTypeMySQL:
 		dialect = mysql.Open(config.DSN)
-	case DBTypeGreenplum:
-		fallthrough
 	case DBTypePostgres:
 		dialect = postgres.Open(config.DSN)
 	case DBTypeOracle:
@@ -100,8 +98,6 @@ func InitConfig(config *Config) error {
 	switch config.DBType {
 	case DBTypeMySQL:
 		dialect = mysql.Open(config.DSN)
-	case DBTypeGreenplum:
-		fallthrough
 	case DBTypePostgres:
 		dialect = postgres.Open(config.DSN)
 	case DBTypeOracle:

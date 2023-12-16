@@ -2,8 +2,9 @@ package dboperator
 
 import (
 	"context"
-	"github.com/jasonlabz/dbutil/gormx"
 	"math"
+
+	"github.com/jasonlabz/dbutil/gormx"
 )
 
 // IConnector 数据库连接器接口

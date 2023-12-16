@@ -1,13 +1,15 @@
-package dboperator
+package sqlserver
 
 import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/gormx"
 )
 
-func NewSqlserverOperator() IOperator {
+func NewSqlserverOperator() dboperator.IOperator {
 	return &SqlServerOperator{}
 }
 
@@ -37,7 +39,7 @@ func (s SqlServerOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatemen
 	return
 }
 
-func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *Pagination) (rows []map[string]interface{}, err error) {
+func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
 	db, err := gormx.GetDB(dbName)
 	if err != nil {
@@ -59,13 +61,13 @@ func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName,
 	return
 }
 
-func (s SqlServerOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*LogicDBInfo, err error) {
-	dbTableMap = make(map[string]*LogicDBInfo)
+func (s SqlServerOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
 	}
-	gormDBTables := make([]*GormDBTable, 0)
+	gormDBTables := make([]*dboperator.GormDBTable, 0)
 	db, err := gormx.GetDB(dbName)
 	if err != nil {
 		return
@@ -88,16 +90,16 @@ func (s SqlServerOperator) GetTablesUnderDB(ctx context.Context, dbName string) 
 	}
 	for _, row := range gormDBTables {
 		if logicDBInfo, ok := dbTableMap[row.TableSchema]; !ok {
-			dbTableMap[row.TableSchema] = &LogicDBInfo{
+			dbTableMap[row.TableSchema] = &dboperator.LogicDBInfo{
 				SchemaName: row.TableSchema,
-				TableInfoList: []*TableInfo{{
+				TableInfoList: []*dboperator.TableInfo{{
 					TableName: row.TableName,
 					Comment:   row.Comments,
 				}},
 			}
 		} else {
 			logicDBInfo.TableInfoList = append(logicDBInfo.TableInfoList,
-				&TableInfo{
+				&dboperator.TableInfo{
 					TableName: row.TableName,
 					Comment:   row.Comments,
 				})
@@ -106,13 +108,13 @@ func (s SqlServerOperator) GetTablesUnderDB(ctx context.Context, dbName string) 
 	return
 }
 
-func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*TableColInfo, err error) {
-	dbTableColMap = make(map[string]map[string]*TableColInfo, 0)
+func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*dboperator.TableColInfo, err error) {
+	dbTableColMap = make(map[string]map[string]*dboperator.TableColInfo, 0)
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
 	}
-	gormTableColumns := make([]*GormTableColumn, 0)
+	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
 	db, err := gormx.GetDB(dbName)
 	if err != nil {
 		return
@@ -132,10 +134,10 @@ func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTab
 
 	for _, row := range gormTableColumns {
 		if dbTableColInfoMap, ok := dbTableColMap[row.TableSchema]; !ok {
-			dbTableColMap[row.TableSchema] = map[string]*TableColInfo{
+			dbTableColMap[row.TableSchema] = map[string]*dboperator.TableColInfo{
 				row.TableName: {
 					TableName: row.TableName,
-					ColumnInfoList: []*ColumnInfo{{
+					ColumnInfoList: []*dboperator.ColumnInfo{{
 						ColumnName: row.ColumnName,
 						Comment:    row.Comments,
 						DataType:   row.DataType,
@@ -143,16 +145,16 @@ func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTab
 				},
 			}
 		} else if tableColInfo, ok_ := dbTableColInfoMap[row.TableName]; !ok_ {
-			dbTableColInfoMap[row.TableName] = &TableColInfo{
+			dbTableColInfoMap[row.TableName] = &dboperator.TableColInfo{
 				TableName: row.TableName,
-				ColumnInfoList: []*ColumnInfo{{
+				ColumnInfoList: []*dboperator.ColumnInfo{{
 					ColumnName: row.ColumnName,
 					Comment:    row.Comments,
 					DataType:   row.DataType,
 				}},
 			}
 		} else {
-			tableColInfo.ColumnInfoList = append(tableColInfo.ColumnInfoList, &ColumnInfo{
+			tableColInfo.ColumnInfoList = append(tableColInfo.ColumnInfoList, &dboperator.ColumnInfo{
 				ColumnName: row.ColumnName,
 				Comment:    row.Comments,
 				DataType:   row.DataType,
@@ -162,8 +164,8 @@ func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTab
 	return
 }
 
-func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*TableColInfo, err error) {
-	tableColMap = make(map[string]*TableColInfo, 0)
+func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*dboperator.TableColInfo, err error) {
+	tableColMap = make(map[string]*dboperator.TableColInfo, 0)
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
@@ -173,7 +175,7 @@ func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, lo
 		return
 	}
 
-	gormTableColumns := make([]*GormTableColumn, 0)
+	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
 	db, err := gormx.GetDB(dbName)
 	if err != nil {
 		return
@@ -194,16 +196,16 @@ func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, lo
 
 	for _, row := range gormTableColumns {
 		if tableColInfo, ok := tableColMap[row.TableName]; !ok {
-			tableColMap[row.TableName] = &TableColInfo{
+			tableColMap[row.TableName] = &dboperator.TableColInfo{
 				TableName: row.TableName,
-				ColumnInfoList: []*ColumnInfo{{
+				ColumnInfoList: []*dboperator.ColumnInfo{{
 					ColumnName: row.ColumnName,
 					Comment:    row.Comments,
 					DataType:   row.DataType,
 				}},
 			}
 		} else {
-			tableColInfo.ColumnInfoList = append(tableColInfo.ColumnInfoList, &ColumnInfo{
+			tableColInfo.ColumnInfoList = append(tableColInfo.ColumnInfoList, &dboperator.ColumnInfo{
 				ColumnName: row.ColumnName,
 				Comment:    row.Comments,
 				DataType:   row.DataType,

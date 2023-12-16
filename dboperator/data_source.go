@@ -1,17 +1,20 @@
-package datasource
+package dboperator
 
 import (
 	"context"
 	"errors"
 
-	dboperator2 "github.com/jasonlabz/dbutil/dboperator"
+	"github.com/jasonlabz/dbutil/dboperator/mysql"
+	"github.com/jasonlabz/dbutil/dboperator/oracle"
+	"github.com/jasonlabz/dbutil/dboperator/postgresql"
+	"github.com/jasonlabz/dbutil/dboperator/sqlserver"
 	"github.com/jasonlabz/dbutil/gormx"
 )
 
 var dsMap = make(map[gormx.DBType]*DS)
 
 type DS struct {
-	Operator dboperator2.IOperator
+	Operator IOperator
 }
 
 // Open open database by config
@@ -30,17 +33,17 @@ func (ds *DS) Close(dbName string) error {
 }
 
 // GetTablesUnderDB 获取该库下所有逻辑库及表名
-func (ds *DS) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*dboperator2.LogicDBInfo, err error) {
+func (ds *DS) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*LogicDBInfo, err error) {
 	return ds.Operator.GetTablesUnderDB(ctx, dbName)
 }
 
 // GetColumns 获取指定库所有逻辑库及表下字段列表
-func (ds *DS) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*dboperator2.TableColInfo, err error) {
+func (ds *DS) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*TableColInfo, err error) {
 	return ds.Operator.GetColumns(ctx, dbName)
 }
 
 // GetColumnsUnderTable 获取指定库表下字段列表
-func (ds *DS) GetColumnsUnderTable(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*dboperator2.TableColInfo, err error) {
+func (ds *DS) GetColumnsUnderTable(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*TableColInfo, err error) {
 	return ds.Operator.GetColumnsUnderTables(ctx, dbName, logicDBName, tableNames)
 }
 
@@ -60,7 +63,7 @@ func (ds *DS) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (ro
 }
 
 // GetTableData 执行查询表数据, pageInfo为nil时不分页
-func (ds *DS) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator2.Pagination) (rows []map[string]interface{}, err error) {
+func (ds *DS) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *Pagination) (rows []map[string]interface{}, err error) {
 	return ds.Operator.GetTableData(ctx, dbName, schemaName, tableName, pageInfo)
 }
 
@@ -77,24 +80,19 @@ func GetDS(dataSourceType gormx.DBType) (ds *DS, err error) {
 func init() {
 	// oracle
 	dsMap[gormx.DBTypeOracle] = &DS{
-		Operator: dboperator2.NewOracleOperator(),
+		Operator: oracle.NewOracleOperator(),
 	}
 	// postgresql
 	dsMap[gormx.DBTypePostgres] = &DS{
-		Operator: dboperator2.NewPGOperator(),
+		Operator: postgresql.NewPGOperator(),
 	}
 	// mysql
 	dsMap[gormx.DBTypeMySQL] = &DS{
-		Operator: dboperator2.NewMySQLOperator(),
-	}
-
-	// greenplum
-	dsMap[gormx.DBTypeGreenplum] = &DS{
-		Operator: dboperator2.NewGPOperator(),
+		Operator: mysql.NewMySQLOperator(),
 	}
 
 	// sqlserver
 	dsMap[gormx.DBTypeSqlserver] = &DS{
-		Operator: dboperator2.NewSqlserverOperator(),
+		Operator: sqlserver.NewSqlserverOperator(),
 	}
 }

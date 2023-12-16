@@ -41,8 +41,6 @@ func (c *Config) GetDataBase() (database string) {
 		split := strings.Split(dsn, "/")
 		database = split[len(split)-1]
 		database = strings.ReplaceAll(database, "?parseTime=True&loc=Local", "")
-	case DBTypeGreenplum:
-		fallthrough
 	case DBTypePostgres:
 		split := strings.Split(dsn, " ")
 		database = split[4]
