@@ -18,6 +18,7 @@ const (
 
 type Field struct {
 	Type          FieldType
+	ColumnName    string
 	IsText        bool   // 区分字符串和文本
 	IsFixedNumber bool   // 区分浮点数和定点数
 	TimeType      string // 区分时间类型 date|datetime|year|time|timetz|timestamp|timestamptz

@@ -2,10 +2,10 @@ package mysql
 
 import (
 	"fmt"
-	"github.com/jasonlabz/dbutil/utils"
 	"strconv"
 	"strings"
 
+	"github.com/jasonlabz/dbutil/core/utils"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/log"
 )

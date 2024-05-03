@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
+	"strings"
 )
 
 const DBTypeMYSQL dbx.DBType = dbx.DBTypeMySQL
@@ -15,6 +16,10 @@ func NewMySQLOperator() dboperator.IOperator {
 }
 
 type MySQLOperator struct{}
+
+func (m MySQLOperator) GetDB(name string) (*dbx.DBWrapper, error) {
+	return dbx.GetDB(name)
+}
 
 func (m MySQLOperator) Open(config *dbx.Config) error {
 	return dbx.InitConfig(config)
@@ -59,6 +64,55 @@ func (m MySQLOperator) GetTableData(ctx context.Context, dbName, schemaName, tab
 		Find(&rows).Error
 	pageInfo.Total = count
 	pageInfo.SetPageCount()
+	return
+}
+
+func (m MySQLOperator) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
+	if dbName == "" {
+		err = errors.New("empty dnName")
+		return
+	}
+	for index, schema := range schemas {
+		schemas[index] = "'" + schema + "'"
+	}
+	gormDBTables := make([]*dboperator.GormDBTable, 0)
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	err = db.DB.WithContext(ctx).
+		Raw("SELECT TABLE_SCHEMA as table_schema, " +
+			"TABLE_NAME as table_name, " +
+			"TABLE_COMMENT as comments " +
+			"FROM INFORMATION_SCHEMA.TABLES " +
+			"WHERE TABLE_TYPE = 'BASE TABLE' " +
+			"AND TABLE_SCHEMA IN (" + strings.Join(schemas, ",") + ") " +
+			"ORDER  BY TABLE_SCHEMA, TABLE_NAME").
+		Find(&gormDBTables).Error
+	if err != nil {
+		return
+	}
+	if len(gormDBTables) == 0 {
+		return
+	}
+	for _, row := range gormDBTables {
+		if logicDBInfo, ok := dbTableMap[row.TableSchema]; !ok {
+			dbTableMap[row.TableSchema] = &dboperator.LogicDBInfo{
+				SchemaName: row.TableSchema,
+				TableInfoList: []*dboperator.TableInfo{{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				}},
+			}
+		} else {
+			logicDBInfo.TableInfoList = append(logicDBInfo.TableInfoList,
+				&dboperator.TableInfo{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				})
+		}
+	}
 	return
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
@@ -16,6 +17,10 @@ func NewOracleOperator() dboperator.IOperator {
 }
 
 type OracleOperator struct{}
+
+func (o OracleOperator) GetDB(name string) (*dbx.DBWrapper, error) {
+	return dbx.GetDB(name)
+}
 
 func (o OracleOperator) Open(config *dbx.Config) error {
 	return dbx.InitConfig(config)
@@ -60,6 +65,55 @@ func (o OracleOperator) GetTableData(ctx context.Context, dbName, schemaName, ta
 		Find(&rows).Error
 	pageInfo.Total = count
 	pageInfo.SetPageCount()
+	return
+}
+
+func (o OracleOperator) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
+	if dbName == "" {
+		err = errors.New("empty dnName")
+		return
+	}
+	for index, schema := range schemas {
+		schemas[index] = "'" + schema + "'"
+	}
+	gormDBTables := make([]*dboperator.GormDBTable, 0)
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	err = db.DB.WithContext(ctx).
+		Raw("SELECT OWNER as table_schema, " +
+			"TABLE_NAME as table_name, " +
+			"COMMENTS as comments " +
+			"FROM all_tab_comments " +
+			"WHERE OWNER IN " +
+			"(" + strings.Join(schemas, ",") + ") " +
+			"ORDER BY OWNER, TABLE_NAME").
+		Find(&gormDBTables).Error
+	if err != nil {
+		return
+	}
+	if len(gormDBTables) == 0 {
+		return
+	}
+	for _, row := range gormDBTables {
+		if logicDBInfo, ok := dbTableMap[row.TableSchema]; !ok {
+			dbTableMap[row.TableSchema] = &dboperator.LogicDBInfo{
+				SchemaName: row.TableSchema,
+				TableInfoList: []*dboperator.TableInfo{{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				}},
+			}
+		} else {
+			logicDBInfo.TableInfoList = append(logicDBInfo.TableInfoList,
+				&dboperator.TableInfo{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				})
+		}
+	}
 	return
 }
 

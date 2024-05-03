@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
@@ -16,6 +17,10 @@ func NewSqlserverOperator() dboperator.IOperator {
 }
 
 type SqlServerOperator struct{}
+
+func (s SqlServerOperator) GetDB(name string) (*dbx.DBWrapper, error) {
+	return dbx.GetDB(name)
+}
 
 func (s SqlServerOperator) Open(config *dbx.Config) error {
 	return dbx.InitConfig(config)
@@ -60,6 +65,56 @@ func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName,
 		Find(&rows).Error
 	pageInfo.Total = count
 	pageInfo.SetPageCount()
+	return
+}
+
+func (s SqlServerOperator) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
+	if dbName == "" {
+		err = errors.New("empty dnName")
+		return
+	}
+	for index, schema := range schemas {
+		schemas[index] = "'" + schema + "'"
+	}
+	gormDBTables := make([]*dboperator.GormDBTable, 0)
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	db.DB.WithContext(ctx).
+		Raw("select  " +
+			"a.name AS table_name, " +
+			"b.name as table_schema, " +
+			"CONVERT(NVARCHAR(100),isnull(c.[value],'-')) AS comments " +
+			"FROM sys.tables a " +
+			"LEFT JOIN sys.schemas b " +
+			"ON a.schema_id = b.schema_id " +
+			"LEFT JOIN sys.extended_properties c " +
+			"ON (a.object_id = c.major_id AND c.minor_id = 0) " +
+			"WHERE b.name IN (" + strings.Join(schemas, ",") + ") " +
+			"ORDER BY b.name,a.name").
+		Find(&gormDBTables)
+	if len(gormDBTables) == 0 {
+		return
+	}
+	for _, row := range gormDBTables {
+		if logicDBInfo, ok := dbTableMap[row.TableSchema]; !ok {
+			dbTableMap[row.TableSchema] = &dboperator.LogicDBInfo{
+				SchemaName: row.TableSchema,
+				TableInfoList: []*dboperator.TableInfo{{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				}},
+			}
+		} else {
+			logicDBInfo.TableInfoList = append(logicDBInfo.TableInfoList,
+				&dboperator.TableInfo{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				})
+		}
+	}
 	return
 }
 

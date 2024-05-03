@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
@@ -17,19 +18,23 @@ func NewPGOperator() dboperator.IOperator {
 
 type PGOperator struct{}
 
-func (P PGOperator) Open(config *dbx.Config) error {
+func (p PGOperator) GetDB(name string) (*dbx.DBWrapper, error) {
+	return dbx.GetDB(name)
+}
+
+func (p PGOperator) Open(config *dbx.Config) error {
 	return dbx.InitConfig(config)
 }
 
-func (P PGOperator) Ping(dbName string) error {
+func (p PGOperator) Ping(dbName string) error {
 	return dbx.Ping(dbName)
 }
 
-func (P PGOperator) Close(dbName string) error {
+func (p PGOperator) Close(dbName string) error {
 	return dbx.Close(dbName)
 }
 
-func (P PGOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error) {
+func (p PGOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
 	db, err := dbx.GetDB(dbName)
 	if err != nil {
@@ -41,7 +46,7 @@ func (P PGOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement strin
 	return
 }
 
-func (P PGOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
+func (p PGOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
 	db, err := dbx.GetDB(dbName)
 	if err != nil {
@@ -63,7 +68,57 @@ func (P PGOperator) GetTableData(ctx context.Context, dbName, schemaName, tableN
 	return
 }
 
-func (P PGOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+func (p PGOperator) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
+	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
+	if dbName == "" {
+		err = errors.New("empty dnName")
+		return
+	}
+	for index, schema := range schemas {
+		schemas[index] = "'" + schema + "'"
+	}
+	gormDBTables := make([]*dboperator.GormDBTable, 0)
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	err = db.DB.WithContext(ctx).
+		Raw("SELECT tb.schemaname as table_schema, " +
+			"tb.tablename as table_name, " +
+			"d.description as comments " +
+			"FROM pg_tables tb " +
+			"JOIN pg_class c ON c.relname = tb.tablename " +
+			"LEFT JOIN pg_description d ON d.objoid = c.oid AND d.objsubid = '0' " +
+			"WHERE schemaname in (" + strings.Join(schemas, ",") + ") " +
+			"AND tablename NOT LIKE 'pg%' " +
+			"AND tablename NOT LIKE 'gp%' " +
+			"AND tablename NOT LIKE 'sql_%' " +
+			"ORDER BY tb.schemaname, tb.tablename").
+		Find(&gormDBTables).Error
+	if len(gormDBTables) == 0 {
+		return
+	}
+	for _, row := range gormDBTables {
+		if logicDBInfo, ok := dbTableMap[row.TableSchema]; !ok {
+			dbTableMap[row.TableSchema] = &dboperator.LogicDBInfo{
+				SchemaName: row.TableSchema,
+				TableInfoList: []*dboperator.TableInfo{{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				}},
+			}
+		} else {
+			logicDBInfo.TableInfoList = append(logicDBInfo.TableInfoList,
+				&dboperator.TableInfo{
+					TableName: row.TableName,
+					Comment:   row.Comments,
+				})
+		}
+	}
+	return
+}
+
+func (p PGOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
 	dbTableMap = make(map[string]*dboperator.LogicDBInfo)
 	if dbName == "" {
 		err = errors.New("empty dnName")
@@ -110,7 +165,7 @@ func (P PGOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTabl
 	return
 }
 
-func (P PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*dboperator.TableColInfo, err error) {
+func (p PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*dboperator.TableColInfo, err error) {
 	dbTableColMap = make(map[string]map[string]*dboperator.TableColInfo, 0)
 	if dbName == "" {
 		err = errors.New("empty dnName")
@@ -178,7 +233,7 @@ func (P PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMa
 	return
 }
 
-func (P PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*dboperator.TableColInfo, err error) {
+func (p PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*dboperator.TableColInfo, err error) {
 	tableColMap = make(map[string]*dboperator.TableColInfo, 0)
 	if dbName == "" {
 		err = errors.New("empty dnName")
@@ -239,7 +294,7 @@ func (P PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBNa
 	return
 }
 
-func (P PGOperator) CreateSchema(ctx context.Context, dbName, schemaName, commentInfo string) (err error) {
+func (p PGOperator) CreateSchema(ctx context.Context, dbName, schemaName, commentInfo string) (err error) {
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
@@ -263,7 +318,7 @@ func (P PGOperator) CreateSchema(ctx context.Context, dbName, schemaName, commen
 	return
 }
 
-func (P PGOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
+func (p PGOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return

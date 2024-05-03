@@ -10,6 +10,7 @@ import (
 // IConnector 数据库连接器接口
 type IConnector interface {
 	Open(config *dbx.Config) error
+	GetDB(name string) (*dbx.DBWrapper, error)
 	Ping(dbName string) error
 	Close(dbName string) error
 }
@@ -18,6 +19,8 @@ type IConnector interface {
 type IDataExplorer interface {
 	// GetTablesUnderDB 获取该库下所有逻辑库及表名
 	GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*LogicDBInfo, err error)
+	// GetTablesUnderSchema 获取模式下表名
+	GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*LogicDBInfo, err error)
 	// GetColumns 获取指定库所有逻辑库及表下字段列表
 	GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*TableColInfo, err error)
 	// GetColumnsUnderTables 获取指定库表下字段列表

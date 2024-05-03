@@ -27,6 +27,11 @@ func (ds *DS) Open(config *dbx.Config) error {
 	return ds.Operator.Open(config)
 }
 
+// GetDB GetDB instance by name
+func (ds *DS) GetDB(name string) (*dbx.DBWrapper, error) {
+	return ds.Operator.GetDB(name)
+}
+
 // Ping verifies a connection to the database is still alive, establishing a connection if necessary
 func (ds *DS) Ping(dbName string) error {
 	return ds.Operator.Ping(dbName)
@@ -35,6 +40,11 @@ func (ds *DS) Ping(dbName string) error {
 // Close database by name
 func (ds *DS) Close(dbName string) error {
 	return ds.Operator.Close(dbName)
+}
+
+// GetTablesUnderSchema 获取该逻辑库下所有表名
+func (ds *DS) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*LogicDBInfo, err error) {
+	return ds.Operator.GetTablesUnderSchema(ctx, dbName, schemas)
 }
 
 // GetTablesUnderDB 获取该库下所有逻辑库及表名
@@ -58,7 +68,7 @@ func (ds *DS) CreateSchema(ctx context.Context, dbName, schemaName, commentInfo 
 }
 
 // ExecuteDDL 执行DDL
-func (ds *DS) ExecuteDDL(ctx context.Context, dbName, logicDBName, tableName, ddlStatement string) (err error) {
+func (ds *DS) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
 	return ds.Operator.ExecuteDDL(ctx, dbName, ddlStatement)
 }
 

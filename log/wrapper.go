@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/jasonlabz/dbutil/utils"
+	"github.com/jasonlabz/dbutil/core/utils"
 )
 
 type loggerWrapper struct {

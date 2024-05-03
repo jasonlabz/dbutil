@@ -9,11 +9,11 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/jasonlabz/potato/core/config/util"
-	"github.com/jasonlabz/potato/core/config/util/yaml"
-	"github.com/jasonlabz/potato/core/consts"
-	"github.com/jasonlabz/potato/core/times"
-	"github.com/jasonlabz/potato/core/utils"
+	"github.com/jasonlabz/dbutil/core/config/util"
+	"github.com/jasonlabz/dbutil/core/config/util/yaml"
+	"github.com/jasonlabz/dbutil/core/consts"
+	"github.com/jasonlabz/dbutil/core/times"
+	"github.com/jasonlabz/dbutil/core/utils"
 )
 
 var (
