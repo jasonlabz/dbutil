@@ -1,4 +1,4 @@
-package gormx
+package dbx
 
 import (
 	"errors"
@@ -20,63 +20,6 @@ func init() {
 type DBWrapper struct {
 	DB     *gorm.DB
 	Config *Config
-}
-
-func GetDBByConfig(config *Config) (*gorm.DB, error) {
-	if config == nil {
-		return nil, errors.New("no db config")
-	}
-	if config.DBName == "" {
-		return nil, errors.New("no db name")
-	}
-	if config.DSN == "" &&
-		config.GenDSN() == "" {
-		return nil, errors.New("no db dsn")
-	}
-	_dbWrapper, ok := dbMap.Load(config.DBName)
-	if ok {
-		return _dbWrapper.(*DBWrapper).DB, nil
-	}
-	var dialect gorm.Dialector
-	switch config.DBType {
-	case DBTypeMySQL:
-		dialect = mysql.Open(config.DSN)
-	case DBTypePostgres:
-		dialect = postgres.Open(config.DSN)
-	case DBTypeOracle:
-		dialect = oracle.Open(config.DSN)
-	case DBTypeSqlserver:
-		dialect = sqlserver.Open(config.DSN)
-	default:
-		return nil, errors.New(fmt.Sprintf("unsupported dbType: %s", string(config.DBType)))
-	}
-	if config.MaxOpenConn == 0 {
-		config.MaxOpenConn = defaultMaxOpenConn
-	}
-	if config.MaxIdleConn == 0 {
-		config.MaxIdleConn = defaultMaxIdleConn
-	}
-	if config.ConnMaxLifeTime == 0 {
-		config.ConnMaxLifeTime = defaultConnMaxLifeTime
-	}
-	db, err := gorm.Open(dialect)
-	if err != nil {
-		return nil, err
-	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-	sqlDB.SetMaxOpenConns(config.MaxOpenConn)
-	sqlDB.SetMaxIdleConns(config.MaxIdleConn)
-	sqlDB.SetConnMaxLifetime(config.ConnMaxLifeTime)
-	dbWrapper := &DBWrapper{
-		DB:     db,
-		Config: config,
-	}
-	dbMap.Store(config.DBName, dbWrapper)
-	return db, nil
 }
 
 func InitConfig(config *Config) error {
@@ -144,13 +87,13 @@ func GetDBConfig(name string) (*Config, error) {
 	return db.(*DBWrapper).Config, nil
 }
 
-func GetDB(name string) (*gorm.DB, error) {
+func GetDB(name string) (*DBWrapper, error) {
 	db, ok := dbMap.Load(name)
 	if !ok {
 		return nil, errors.New("no db instance")
 	}
 
-	return db.(*DBWrapper).DB, nil
+	return db.(*DBWrapper), nil
 }
 
 func Close(dbName string) error {
@@ -176,10 +119,10 @@ func Ping(dbName string) error {
 	if err != nil {
 		return err
 	}
-	if db == nil {
+	if db == nil || db.DB == nil {
 		return errors.New("db instance is nil")
 	}
-	sqlDB, err := db.DB()
+	sqlDB, err := db.DB.DB()
 	if err != nil {
 		return err
 	}

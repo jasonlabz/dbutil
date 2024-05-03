@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jasonlabz/dbutil/dboperator"
-	"github.com/jasonlabz/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/dbx"
 )
+
+const DBTypePG dbx.DBType = dbx.DBTypePostgres
 
 func NewPGOperator() dboperator.IOperator {
 	return &PGOperator{}
@@ -15,25 +17,25 @@ func NewPGOperator() dboperator.IOperator {
 
 type PGOperator struct{}
 
-func (P PGOperator) Open(config *gormx.Config) error {
-	return gormx.InitConfig(config)
+func (P PGOperator) Open(config *dbx.Config) error {
+	return dbx.InitConfig(config)
 }
 
 func (P PGOperator) Ping(dbName string) error {
-	return gormx.Ping(dbName)
+	return dbx.Ping(dbName)
 }
 
 func (P PGOperator) Close(dbName string) error {
-	return gormx.Close(dbName)
+	return dbx.Close(dbName)
 }
 
 func (P PGOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw(sqlStatement).
 		Find(&rows).Error
 	return
@@ -41,7 +43,7 @@ func (P PGOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement strin
 
 func (P PGOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
@@ -50,7 +52,7 @@ func (P PGOperator) GetTableData(ctx context.Context, dbName, schemaName, tableN
 		queryTable = fmt.Sprintf("\"%s\".\"%s\"", schemaName, tableName)
 	}
 	var count int64
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Table(queryTable).
 		Count(&count).
 		Offset(int(pageInfo.GetOffset())).
@@ -68,11 +70,11 @@ func (P PGOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTabl
 		return
 	}
 	gormDBTables := make([]*dboperator.GormDBTable, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("SELECT tb.schemaname as table_schema, " +
 			"tb.tablename as table_name, " +
 			"d.description as comments " +
@@ -115,11 +117,11 @@ func (P PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMa
 		return
 	}
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("select " +
 			"ic.table_schema table_schema, " +
 			"ic.table_name table_name, " +
@@ -188,11 +190,11 @@ func (P PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBNa
 	}
 
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("select "+
 			"ic.table_schema table_schema, "+
 			"ic.table_name table_name, "+
@@ -245,16 +247,16 @@ func (P PGOperator) CreateSchema(ctx context.Context, dbName, schemaName, commen
 	if commentInfo == "" {
 		commentInfo = schemaName
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec("create schema if not exists " + schemaName).Error
+	err = db.DB.WithContext(ctx).Exec("create schema if not exists " + schemaName).Error
 	if err != nil {
 		return
 	}
 	commentStr := fmt.Sprintf("comment on schema %s is '%s'", schemaName, commentInfo)
-	err = db.WithContext(ctx).Exec(commentStr).Error
+	err = db.DB.WithContext(ctx).Exec(commentStr).Error
 	if err != nil {
 		return
 	}
@@ -266,13 +268,20 @@ func (P PGOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement string)
 		err = errors.New("empty dnName")
 		return
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec(ddlStatement).Error
+	err = db.DB.WithContext(ctx).Exec(ddlStatement).Error
 	if err != nil {
 		return
 	}
 	return
+}
+
+func init() {
+	err := dboperator.RegisterDS(DBTypePG, NewPGOperator())
+	if err != nil {
+		panic(err)
+	}
 }

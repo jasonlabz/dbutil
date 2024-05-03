@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jasonlabz/dbutil/dboperator"
-	"github.com/jasonlabz/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/dbx"
 )
+
+const DBTypeOracle dbx.DBType = dbx.DBTypeOracle
 
 func NewOracleOperator() dboperator.IOperator {
 	return &OracleOperator{}
@@ -15,25 +17,25 @@ func NewOracleOperator() dboperator.IOperator {
 
 type OracleOperator struct{}
 
-func (o OracleOperator) Open(config *gormx.Config) error {
-	return gormx.InitConfig(config)
+func (o OracleOperator) Open(config *dbx.Config) error {
+	return dbx.InitConfig(config)
 }
 
 func (o OracleOperator) Ping(dbName string) error {
-	return gormx.Ping(dbName)
+	return dbx.Ping(dbName)
 }
 
 func (o OracleOperator) Close(dbName string) error {
-	return gormx.Close(dbName)
+	return dbx.Close(dbName)
 }
 
 func (o OracleOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw(sqlStatement).
 		Find(&rows).Error
 	return
@@ -41,7 +43,7 @@ func (o OracleOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement s
 
 func (o OracleOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
@@ -50,7 +52,7 @@ func (o OracleOperator) GetTableData(ctx context.Context, dbName, schemaName, ta
 		queryTable = fmt.Sprintf("\"%s\".\"%s\"", schemaName, tableName)
 	}
 	var count int64
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Table(queryTable).
 		Count(&count).
 		Offset(int(pageInfo.GetOffset())).
@@ -68,11 +70,11 @@ func (o OracleOperator) GetTablesUnderDB(ctx context.Context, dbName string) (db
 		return
 	}
 	gormDBTables := make([]*dboperator.GormDBTable, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("SELECT OWNER as table_schema, " +
 			"TABLE_NAME as table_name, " +
 			"COMMENTS as comments " +
@@ -114,11 +116,11 @@ func (o OracleOperator) GetColumns(ctx context.Context, dbName string) (dbTableC
 		return
 	}
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("SELECT atc.OWNER as table_schema, " +
 			"atc.TABLE_NAME as table_name, " +
 			"atc.Column_Name as column_name," +
@@ -181,11 +183,11 @@ func (o OracleOperator) GetColumnsUnderTables(ctx context.Context, dbName, logic
 	}
 
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw("SELECT atc.OWNER as table_schema, "+
 			"atc.TABLE_NAME as table_name, "+
 			"atc.Column_Name as column_name,"+
@@ -234,20 +236,20 @@ func (o OracleOperator) CreateSchema(ctx context.Context, dbName, schemaName, co
 	if commentInfo == "" {
 		commentInfo = schemaName
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	config, err := gormx.GetDBConfig(dbName)
+	config, err := dbx.GetDBConfig(dbName)
 	if err != nil {
 		return
 	}
 	password := config.Password
-	err = db.WithContext(ctx).Exec(fmt.Sprintf("create user %s identified by %s", schemaName, password)).Error
+	err = db.DB.WithContext(ctx).Exec(fmt.Sprintf("create user %s identified by %s", schemaName, password)).Error
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec(fmt.Sprintf("grant connect, resource to %s", schemaName)).Error
+	err = db.DB.WithContext(ctx).Exec(fmt.Sprintf("grant connect, resource to %s", schemaName)).Error
 	if err != nil {
 		return
 	}
@@ -259,13 +261,20 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement str
 		err = errors.New("empty dnName")
 		return
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec(ddlStatement).Error
+	err = db.DB.WithContext(ctx).Exec(ddlStatement).Error
 	if err != nil {
 		return
 	}
 	return
+}
+
+func init() {
+	err := dboperator.RegisterDS(DBTypeOracle, NewOracleOperator())
+	if err != nil {
+		panic(err)
+	}
 }

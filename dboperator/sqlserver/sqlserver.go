@@ -6,8 +6,10 @@ import (
 	"fmt"
 
 	"github.com/jasonlabz/dbutil/dboperator"
-	"github.com/jasonlabz/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/dbx"
 )
+
+const DBTypeSqlserver dbx.DBType = dbx.DBTypeSqlserver
 
 func NewSqlserverOperator() dboperator.IOperator {
 	return &SqlServerOperator{}
@@ -15,25 +17,25 @@ func NewSqlserverOperator() dboperator.IOperator {
 
 type SqlServerOperator struct{}
 
-func (s SqlServerOperator) Open(config *gormx.Config) error {
-	return gormx.InitConfig(config)
+func (s SqlServerOperator) Open(config *dbx.Config) error {
+	return dbx.InitConfig(config)
 }
 
 func (s SqlServerOperator) Ping(dbName string) error {
-	return gormx.Ping(dbName)
+	return dbx.Ping(dbName)
 }
 
 func (s SqlServerOperator) Close(dbName string) error {
-	return gormx.Close(dbName)
+	return dbx.Close(dbName)
 }
 
 func (s SqlServerOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Raw(sqlStatement).
 		Find(&rows).Error
 	return
@@ -41,7 +43,7 @@ func (s SqlServerOperator) GetDataBySQL(ctx context.Context, dbName, sqlStatemen
 
 func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	rows = make([]map[string]interface{}, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
@@ -50,7 +52,7 @@ func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName,
 		queryTable = fmt.Sprintf("\"%s\".\"%s\"", schemaName, tableName)
 	}
 	var count int64
-	err = db.WithContext(ctx).
+	err = db.DB.WithContext(ctx).
 		Table(queryTable).
 		Count(&count).
 		Offset(int(pageInfo.GetOffset())).
@@ -68,11 +70,11 @@ func (s SqlServerOperator) GetTablesUnderDB(ctx context.Context, dbName string) 
 		return
 	}
 	gormDBTables := make([]*dboperator.GormDBTable, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	db.WithContext(ctx).
+	db.DB.WithContext(ctx).
 		Raw("select  " +
 			"a.name AS table_name, " +
 			"b.name as table_schema, " +
@@ -115,11 +117,11 @@ func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTab
 		return
 	}
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	db.WithContext(ctx).
+	db.DB.WithContext(ctx).
 		Raw("SELECT TABLE_SCHEMA as table_schema, " +
 			"TABLE_NAME as table_name, " +
 			"COLUMN_NAME as column_name, " +
@@ -176,11 +178,11 @@ func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, lo
 	}
 
 	gormTableColumns := make([]*dboperator.GormTableColumn, 0)
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	db.WithContext(ctx).
+	db.DB.WithContext(ctx).
 		Raw("SELECT TABLE_SCHEMA as table_schema, "+
 			"TABLE_NAME as table_name, "+
 			"COLUMN_NAME as column_name, "+
@@ -223,11 +225,11 @@ func (s SqlServerOperator) CreateSchema(ctx context.Context, dbName, schemaName,
 	if commentInfo == "" {
 		commentInfo = schemaName
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec("create schema " + schemaName).Error
+	err = db.DB.WithContext(ctx).Exec("create schema " + schemaName).Error
 	if err != nil {
 		return
 	}
@@ -239,13 +241,20 @@ func (s SqlServerOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement 
 		err = errors.New("empty dnName")
 		return
 	}
-	db, err := gormx.GetDB(dbName)
+	db, err := dbx.GetDB(dbName)
 	if err != nil {
 		return
 	}
-	err = db.WithContext(ctx).Exec(ddlStatement).Error
+	err = db.DB.WithContext(ctx).Exec(ddlStatement).Error
 	if err != nil {
 		return
 	}
 	return
+}
+
+func init() {
+	err := dboperator.RegisterDS(DBTypeSqlserver, NewSqlserverOperator())
+	if err != nil {
+		panic(err)
+	}
 }

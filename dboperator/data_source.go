@@ -3,22 +3,27 @@ package dboperator
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	"github.com/jasonlabz/dbutil/dboperator/mysql"
-	"github.com/jasonlabz/dbutil/dboperator/oracle"
-	"github.com/jasonlabz/dbutil/dboperator/postgresql"
-	"github.com/jasonlabz/dbutil/dboperator/sqlserver"
-	"github.com/jasonlabz/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/dbx"
 )
 
-var dsMap = make(map[gormx.DBType]*DS)
+var dsMap = make(map[dbx.DBType]*DS)
 
 type DS struct {
 	Operator IOperator
 }
 
+func (ds *DS) Trans2CommonField(dataType string) *Field {
+	return ds.Operator.Trans2CommonField(dataType)
+}
+
+func (ds *DS) Trans2DataType(field *Field) string {
+	return ds.Operator.Trans2DataType(field)
+}
+
 // Open open database by config
-func (ds *DS) Open(config *gormx.Config) error {
+func (ds *DS) Open(config *dbx.Config) error {
 	return ds.Operator.Open(config)
 }
 
@@ -67,7 +72,7 @@ func (ds *DS) GetTableData(ctx context.Context, dbName, schemaName, tableName st
 	return ds.Operator.GetTableData(ctx, dbName, schemaName, tableName, pageInfo)
 }
 
-func GetDS(dataSourceType gormx.DBType) (ds *DS, err error) {
+func LoadDS(dataSourceType dbx.DBType) (ds *DS, err error) {
 	var ok bool
 	ds, ok = dsMap[dataSourceType]
 	if !ok {
@@ -77,22 +82,14 @@ func GetDS(dataSourceType gormx.DBType) (ds *DS, err error) {
 	return
 }
 
-func init() {
-	// oracle
-	dsMap[gormx.DBTypeOracle] = &DS{
-		Operator: oracle.NewOracleOperator(),
+func RegisterDS(dataSourceType dbx.DBType, operator IOperator) error {
+	var ok bool
+	_, ok = dsMap[dataSourceType]
+	if ok {
+		return fmt.Errorf("db_type %s is already registered")
 	}
-	// postgresql
-	dsMap[gormx.DBTypePostgres] = &DS{
-		Operator: postgresql.NewPGOperator(),
+	dsMap[dataSourceType] = &DS{
+		Operator: operator,
 	}
-	// mysql
-	dsMap[gormx.DBTypeMySQL] = &DS{
-		Operator: mysql.NewMySQLOperator(),
-	}
-
-	// sqlserver
-	dsMap[gormx.DBTypeSqlserver] = &DS{
-		Operator: sqlserver.NewSqlserverOperator(),
-	}
+	return nil
 }

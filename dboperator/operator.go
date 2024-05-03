@@ -4,12 +4,12 @@ import (
 	"context"
 	"math"
 
-	"github.com/jasonlabz/dbutil/gormx"
+	"github.com/jasonlabz/dbutil/dbx"
 )
 
 // IConnector 数据库连接器接口
 type IConnector interface {
-	Open(config *gormx.Config) error
+	Open(config *dbx.Config) error
 	Ping(dbName string) error
 	Close(dbName string) error
 }
@@ -35,6 +35,7 @@ type IDataExplorer interface {
 type IOperator interface {
 	IConnector
 	IDataExplorer
+	ITransfer
 }
 
 type GormDBTable struct {
