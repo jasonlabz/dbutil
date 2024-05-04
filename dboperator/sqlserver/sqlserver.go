@@ -291,7 +291,99 @@ func (s SqlServerOperator) CreateSchema(ctx context.Context, dbName, schemaName,
 	return
 }
 
-func (s SqlServerOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
+func (s SqlServerOperator) GetTablePrimeKeys(ctx context.Context, dbName string, schemaName string, tables []string) (primeKeyInfo map[string][]string, err error) {
+	if dbName == "" || schemaName == "" || len(tables) == 0 {
+		return
+	}
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	primeKeyInfo = make(map[string][]string)
+	tablePrimeKeys := make([]*dboperator.TablePrimeKey, 0)
+	queryTables := make([]string, 0)
+	for _, table := range tables {
+		queryTables = append(queryTables, "'"+table+"'")
+	}
+	tableList := strings.Join(queryTables, ",")
+	tableList = "(" + tableList + ")"
+	err = db.DB.WithContext(ctx).Raw(`SELECT
+    sc.name as schema_name,
+    t.name AS table_name,
+    c.name AS column_name,
+    k.name AS constraint_name
+FROM
+    sys.indexes k
+JOIN
+    sys.tables t ON k.object_id = t.object_id
+JOIN
+    sys.index_columns ic ON k.object_id = ic.object_id AND k.index_id = ic.index_id
+JOIN
+    sys.columns c ON ic.object_id = c.object_id AND c.column_id = ic.column_id
+JOIN sys.schemas sc on t.schema_id = sc.schema_id
+
+WHERE
+    k.is_primary_key = 1 AND sc.name = '` + schemaName + `' and 
+    t.name IN ` + tableList).Scan(&tablePrimeKeys).Error
+	if err != nil {
+		return
+	}
+	for _, val := range tablePrimeKeys {
+		primeKeyInfo[val.TableName] = append(primeKeyInfo[val.TableName], val.ColumnName)
+	}
+	return
+}
+
+func (s SqlServerOperator) GetTableUniqueKeys(ctx context.Context, dbName string, schemaName string, tables []string) (uniqueKeyInfo map[string]map[string][]string, err error) {
+	if dbName == "" || schemaName == "" || len(tables) == 0 {
+		return
+	}
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	uniqueKeyInfo = make(map[string]map[string][]string)
+	tableUniqueKeys := make([]*dboperator.TablePrimeKey, 0)
+	queryTables := make([]string, 0)
+	for _, table := range tables {
+		queryTables = append(queryTables, "'"+table+"'")
+	}
+	tableList := strings.Join(queryTables, ",")
+	tableList = "(" + tableList + ")"
+	err = db.DB.WithContext(ctx).Raw(
+		`SELECT
+    sc.name as schema_name,
+    t.name AS table_name,
+    c.name AS column_name,
+    k.name AS constraint_name
+FROM
+    sys.indexes k
+JOIN
+    sys.tables t ON k.object_id = t.object_id
+JOIN
+    sys.index_columns ic ON k.object_id = ic.object_id AND k.index_id = ic.index_id
+JOIN
+    sys.columns c ON ic.object_id = c.object_id AND c.column_id = ic.column_id
+JOIN
+    sys.schemas sc on t.schema_id = sc.schema_id
+WHERE
+    k.is_unique_constraint = 1 AND sc.name = '` + schemaName + `' AND  
+    t.name IN ` + tableList).Scan(&tableUniqueKeys).Error
+	if err != nil {
+		return
+	}
+	for _, val := range tableUniqueKeys {
+		uniqueMap, ok := uniqueKeyInfo[val.TableName]
+		if !ok {
+			uniqueMap = make(map[string][]string)
+		}
+		uniqueMap[val.IndexName] = append(uniqueMap[val.IndexName], val.ColumnName)
+		uniqueKeyInfo[val.TableName] = uniqueMap
+	}
+	return
+}
+
+func (s SqlServerOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string, uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*dboperator.Field) (ddlSQL string, err error) {
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
@@ -300,7 +392,41 @@ func (s SqlServerOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement 
 	if err != nil {
 		return
 	}
-	err = db.DB.WithContext(ctx).Exec(ddlStatement).Error
+
+	//ddlSQL := ""
+	ddlTemplate := `create if not exist table "%s" (
+						%s 
+					)`
+	for tableName, fields := range tableFieldsMap {
+		var includeField string
+		for _, field := range fields {
+			if field == nil {
+				continue
+			}
+			dataType := s.Trans2DataType(field)
+			includeField += fmt.Sprintf("%s %s,", field.ColumnName, dataType) + fmt.Sprintln()
+		}
+		if len(primaryKeysMap) > 0 {
+			keys := primaryKeysMap[tableName]
+			if len(keys) > 0 {
+				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
+			}
+		}
+		if len(uniqueKeysMap) > 0 {
+			uniqueKeys := uniqueKeysMap[tableName]
+			for _, columns := range uniqueKeys {
+				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
+			}
+		}
+
+		includeField = strings.TrimSpace(includeField)
+		includeField = strings.Trim(includeField, ",")
+
+		ddlStr := fmt.Sprintf(ddlTemplate, tableName, includeField)
+		ddlSQL += ddlStr + fmt.Sprintln()
+	}
+
+	err = db.DB.WithContext(ctx).Exec(ddlSQL).Error
 	if err != nil {
 		return
 	}

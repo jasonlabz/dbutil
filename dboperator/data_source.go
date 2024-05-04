@@ -67,9 +67,19 @@ func (ds *DS) CreateSchema(ctx context.Context, dbName, schemaName, commentInfo 
 	return ds.Operator.CreateSchema(ctx, dbName, schemaName, commentInfo)
 }
 
+// GetTablePrimeKeys 查询主键
+func (ds *DS) GetTablePrimeKeys(ctx context.Context, dbName string, schemaName string, tables []string) (primeKeyInfo map[string][]string, err error) {
+	return ds.Operator.GetTablePrimeKeys(ctx, dbName, schemaName, tables)
+}
+
+// GetTableUniqueKeys 查询唯一键
+func (ds *DS) GetTableUniqueKeys(ctx context.Context, dbName string, schemaName string, tables []string) (uniqueKeyInfo map[string]map[string][]string, err error) {
+	return ds.Operator.GetTableUniqueKeys(ctx, dbName, schemaName, tables)
+}
+
 // ExecuteDDL 执行DDL
-func (ds *DS) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
-	return ds.Operator.ExecuteDDL(ctx, dbName, ddlStatement)
+func (ds *DS) ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string, uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*Field) (ddlSQL string, err error) {
+	return ds.Operator.ExecuteDDL(ctx, dbName, schemaName, primaryKeysMap, uniqueKeysMap, tableFieldsMap)
 }
 
 // GetDataBySQL 执行自定义

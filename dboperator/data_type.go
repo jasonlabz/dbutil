@@ -19,6 +19,7 @@ const (
 type Field struct {
 	Type          FieldType
 	ColumnName    string
+	ISNullable    bool
 	IsText        bool   // 区分字符串和文本
 	IsFixedNumber bool   // 区分浮点数和定点数
 	TimeType      string // 区分时间类型 date|datetime|year|time|timetz|timestamp|timestamptz
@@ -28,7 +29,7 @@ type Field struct {
 	TimeValue     string
 	Float32Value  float32
 	Float64Value  float64
-	Length        int // 文本长度
+	Length        int // 文本|时间长度
 	Scale         int // 小数点
 	Precision     int // 精度
 }

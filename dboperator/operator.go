@@ -27,8 +27,12 @@ type IDataExplorer interface {
 	GetColumnsUnderTables(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*TableColInfo, err error)
 	// CreateSchema 创建逻辑库
 	CreateSchema(ctx context.Context, dbName, schemaName, commentInfo string) (err error)
+	// GetTablePrimeKeys 查询主键
+	GetTablePrimeKeys(ctx context.Context, dbName string, schemaName string, tables []string) (primeKeyInfo map[string][]string, err error)
+	// GetTableUniqueKeys 查询唯一键
+	GetTableUniqueKeys(ctx context.Context, dbName string, schemaName string, tables []string) (uniqueKeyInfo map[string]map[string][]string, err error)
 	// ExecuteDDL 执行DDL
-	ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error)
+	ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string, uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*Field) (ddlSQL string, err error)
 	// GetDataBySQL 执行自定义
 	GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (rows []map[string]interface{}, err error)
 	// GetTableData 执行查询表数据, pageInfo为nil时不分页
@@ -47,32 +51,44 @@ type GormDBTable struct {
 	Comments    string `db:"comments"`
 }
 
+type TablePrimeKey struct {
+	SchemaName string `db:"schema_name"`
+	TableName  string `db:"table_name"`
+	ColumnName string `db:"column_name"`
+	IndexName  string `db:"constraint_name"`
+}
+
 type GormTableColumn struct {
-	TableSchema string `db:"table_schema"`
-	TableName   string `db:"table_name"`
-	ColumnName  string `db:"column_name"`
-	Comments    string `db:"comments"`
-	DataType    string `db:"data_type"`
+	TableSchema     string `db:"table_schema"`
+	TableName       string `db:"table_name"`
+	ColumnName      string `db:"column_name"`
+	Comments        string `db:"comments"`
+	DataType        string `db:"data_type"`
+	IsNullable      bool   `db:"is_nullable"`      // 可否为null
+	OrdinalPosition int    `db:"ordinal_position"` // 字段序号
 }
 
 type LogicDBInfo struct {
 	SchemaName    string
 	TableInfoList []*TableInfo
 }
+
 type TableInfo struct {
 	TableName string // 列名
 	Comment   string // 注释
 }
+
 type TableColInfo struct {
 	TableName      string
 	ColumnInfoList []*ColumnInfo // 列
 }
+
 type ColumnInfo struct {
-	ColumnName string // 列名
-	Comment    string // 注释
-	DataType   string // 数据类型
-	//IsNullable      bool   // 可否为null
-	//OrdinalPosition int    // 字段序号
+	ColumnName      string // 列名
+	Comment         string // 注释
+	DataType        string // 数据类型
+	IsNullable      bool   // 可否为null
+	OrdinalPosition int    // 字段序号
 }
 
 // Pagination 分页结构体（该分页只适合数据量很少的情况）

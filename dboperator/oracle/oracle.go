@@ -310,7 +310,72 @@ func (o OracleOperator) CreateSchema(ctx context.Context, dbName, schemaName, co
 	return
 }
 
-func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement string) (err error) {
+func (o OracleOperator) GetTablePrimeKeys(ctx context.Context, dbName string, schemaName string, tables []string) (primeKeyInfo map[string][]string, err error) {
+	if dbName == "" || schemaName == "" || len(tables) == 0 {
+		return
+	}
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	primeKeyInfo = make(map[string][]string)
+	tablePrimeKeys := make([]*dboperator.TablePrimeKey, 0)
+	queryTables := make([]string, 0)
+	for _, table := range tables {
+		queryTables = append(queryTables, "'"+table+"'")
+	}
+	tableList := strings.Join(queryTables, ",")
+	tableList = "(" + tableList + ")"
+	err = db.DB.WithContext(ctx).Raw(`select cu.OWNER as schema_name, cu.TABLE_NAME as table_name,cu.CONSTRAINT_NAME as constraint_name,
+    cu.COLUMN_NAME as column_name  from ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au where cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME and cu.TABLE_NAME = au.TABLE_NAME 
+    and cu.OWNER = au.OWNER and  au.OWNER = '` + schemaName + `' and 
+    au.TABLE_NAME IN ` + tableList + ` and au.CONSTRAINT_TYPE = 'P'`).Scan(&tablePrimeKeys).Error
+	if err != nil {
+		return
+	}
+
+	for _, val := range tablePrimeKeys {
+		primeKeyInfo[val.TableName] = append(primeKeyInfo[val.TableName], val.ColumnName)
+	}
+	return
+}
+
+func (o OracleOperator) GetTableUniqueKeys(ctx context.Context, dbName string, schemaName string, tables []string) (uniqueKeyInfo map[string]map[string][]string, err error) {
+	if dbName == "" || schemaName == "" || len(tables) == 0 {
+		return
+	}
+	db, err := dbx.GetDB(dbName)
+	if err != nil {
+		return
+	}
+	uniqueKeyInfo = make(map[string]map[string][]string)
+	tableUniqueKeys := make([]*dboperator.TablePrimeKey, 0)
+	queryTables := make([]string, 0)
+	for _, table := range tables {
+		queryTables = append(queryTables, "'"+table+"'")
+	}
+	tableList := strings.Join(queryTables, ",")
+	tableList = "(" + tableList + ")"
+	err = db.DB.WithContext(ctx).Raw(`select cu.OWNER as schema_name, cu.TABLE_NAME as table_name,cu.CONSTRAINT_NAME as constraint_name,
+    cu.COLUMN_NAME as column_name  from ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au where cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME and cu.TABLE_NAME = au.TABLE_NAME 
+    and cu.OWNER = au.OWNER and  au.OWNER = '` + schemaName + `' and 
+    au.TABLE_NAME IN ` + tableList + ` and au.CONSTRAINT_TYPE = 'U'`).Scan(&tableUniqueKeys).Error
+	if err != nil {
+		return
+	}
+	for _, val := range tableUniqueKeys {
+		uniqueMap, ok := uniqueKeyInfo[val.TableName]
+		if !ok {
+			uniqueMap = make(map[string][]string)
+		}
+		uniqueMap[val.IndexName] = append(uniqueMap[val.IndexName], val.ColumnName)
+		uniqueKeyInfo[val.TableName] = uniqueMap
+	}
+	return
+}
+
+func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string,
+	uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*dboperator.Field) (ddlSQL string, err error) {
 	if dbName == "" {
 		err = errors.New("empty dnName")
 		return
@@ -319,7 +384,41 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, ddlStatement str
 	if err != nil {
 		return
 	}
-	err = db.DB.WithContext(ctx).Exec(ddlStatement).Error
+
+	//ddlSQL := ""
+	ddlTemplate := `create if not exist table "%s" (
+						%s 
+					)`
+	for tableName, fields := range tableFieldsMap {
+		var includeField string
+		for _, field := range fields {
+			if field == nil {
+				continue
+			}
+			dataType := o.Trans2DataType(field)
+			includeField += fmt.Sprintf("%s %s,", field.ColumnName, dataType) + fmt.Sprintln()
+		}
+		if len(primaryKeysMap) > 0 {
+			keys := primaryKeysMap[tableName]
+			if len(keys) > 0 {
+				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
+			}
+		}
+		if len(uniqueKeysMap) > 0 {
+			uniqueKeys := uniqueKeysMap[tableName]
+			for _, columns := range uniqueKeys {
+				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
+			}
+		}
+
+		includeField = strings.TrimSpace(includeField)
+		includeField = strings.Trim(includeField, ",")
+
+		ddlStr := fmt.Sprintf(ddlTemplate, tableName, includeField)
+		ddlSQL += ddlStr + fmt.Sprintln()
+	}
+
+	err = db.DB.WithContext(ctx).Exec(ddlSQL).Error
 	if err != nil {
 		return
 	}

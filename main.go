@@ -2,12 +2,13 @@ package dbutil
 
 import (
 	"context"
+	"errors"
 	"flag"
-	"fmt"
 	"github.com/bytedance/sonic"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 	"github.com/jasonlabz/dbutil/log"
+	"os"
 )
 
 type inputParam struct {
@@ -18,6 +19,22 @@ type inputParam struct {
 	TableList    []string   `json:"tableList"`    // 源库目标表
 }
 
+func (i inputParam) validateParam() error {
+	if i.SourceSchema == "" {
+		return errors.New("请配置sourceSchema")
+	}
+	if i.TargetSchema == "" {
+		return errors.New("请配置targetSchema")
+	}
+	if i.Source.DSN == "" && i.Source.Host == "" {
+		return errors.New("请配置源库DSN或者host")
+	}
+	if i.Target.DSN == "" && i.Target.Host == "" {
+		return errors.New("请配置目标库DSN或者host")
+	}
+	return nil
+}
+
 func main() {
 	ctx := context.Background()
 	var params string
@@ -26,13 +43,18 @@ func main() {
 	flag.StringVar(&params, "c", "", "源库配置信息以及目标库配置信息,{\"source\":{},\"target\":{}}")
 	//flag.StringVar(&dataxPath, "d", "", "datax同步工具目录，可不填，则不执行datax任务")
 	flag.StringVar(&ddlSavePath, "p", "", "ddl语句配置文件保存位置，默认不保存")
-	//limit := flag.Int("l", 0, "拉取数量")
+	//writeSQL := flag.Int("l", 0, "拉取数量")
 	flag.Parse()
+
 	if params == "" {
 		log.DefaultLogger().Fatal("请传入参数, 如: -c ''")
 	}
 	paramStruct := inputParam{}
 	err := sonic.Unmarshal([]byte(params), &paramStruct)
+	if err != nil {
+		log.DefaultLogger().WithError(err).Fatal("解析参数失败")
+	}
+	err = paramStruct.validateParam()
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal("解析参数失败")
 	}
@@ -73,19 +95,33 @@ func main() {
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal(err.Error())
 	}
-	ddlTemplate := `create if not exist table %s (%s)`
+	fields := make([]*dboperator.Field, 0)
+	fieldsMap := make(map[string][]*dboperator.Field, 0)
 	for _, info := range columnsUnderTables {
 		tableName := info.TableName
-		var includeField string
 		for _, columnInfo := range info.ColumnInfoList {
 			field := sourceDS.Trans2CommonField(columnInfo.DataType)
 			if field == nil {
 				continue
 			}
-			dataType := targetDS.Trans2DataType(field)
-			includeField += fmt.Sprintf("%s %s,", columnInfo.ColumnName, dataType)
+			fields = append(fields, field)
 		}
-		ddlStr := fmt.Sprintf(ddlTemplate, fmt.Sprintf("%s.%s", paramStruct.TargetSchema, tableName), includeField)
-		targetDS.ExecuteDDL(ctx, paramStruct.Target.DBName, ddlStr)
+		fieldsMap[tableName] = fields
+	}
+	ddlSQL, err := targetDS.ExecuteDDL(ctx, paramStruct.Target.DBName, paramStruct.TargetSchema, nil, nil, fieldsMap)
+	if err != nil {
+		log.DefaultLogger().WithError(err).Fatal("execute ddl error")
+	}
+	//if ddlSavePath != "" && utils.IsExist(ddlSavePath) {
+	if ddlSavePath != "" {
+		f, openErr := os.OpenFile(ddlSavePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if openErr != nil {
+			log.DefaultLogger().WithError(openErr).Fatal("openErr error")
+		}
+		defer f.Close()
+		_, writeErr := f.WriteString(ddlSQL)
+		if writeErr != nil {
+			log.DefaultLogger().WithError(writeErr).Fatal("writeErr error")
+		}
 	}
 }
