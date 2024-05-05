@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jasonlabz/dbutil/core/utils"
 	"strings"
 
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 )
-
-const DBTypePG dbx.DBType = dbx.DBTypePostgres
 
 func NewPGOperator() dboperator.IOperator {
 	return &PGOperator{}
@@ -306,11 +305,11 @@ func (p PGOperator) CreateSchema(ctx context.Context, dbName, schemaName, commen
 	if err != nil {
 		return
 	}
-	err = db.DB.WithContext(ctx).Exec("create schema if not exists " + schemaName).Error
+	err = db.DB.WithContext(ctx).Exec("create schema if not exists " + utils.QuotaName(schemaName)).Error
 	if err != nil {
 		return
 	}
-	commentStr := fmt.Sprintf("comment on schema %s is '%s'", schemaName, commentInfo)
+	commentStr := fmt.Sprintf("comment on schema %s is '%s'", utils.QuotaName(schemaName), commentInfo)
 	err = db.DB.WithContext(ctx).Exec(commentStr).Error
 	if err != nil {
 		return
@@ -385,7 +384,7 @@ func (p PGOperator) GetTableUniqueKeys(ctx context.Context, dbName string, schem
 		if !ok {
 			uniqueMap = make(map[string][]string)
 		}
-		uniqueMap[val.IndexName] = append(uniqueMap[val.IndexName], val.ColumnName)
+		uniqueMap[val.ConstraintName] = append(uniqueMap[val.ConstraintName], val.ColumnName)
 		uniqueKeyInfo[val.TableName] = uniqueMap
 	}
 	return
@@ -402,9 +401,10 @@ func (p PGOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string, p
 	}
 
 	//ddlSQL := ""
-	ddlTemplate := `create if not exist table "%s" (
-						%s 
-					)`
+	ddlTemplate := `
+create table if not exists %s (
+	%s 
+);`
 	for tableName, fields := range tableFieldsMap {
 		var includeField string
 		for _, field := range fields {
@@ -412,25 +412,31 @@ func (p PGOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string, p
 				continue
 			}
 			dataType := p.Trans2DataType(field)
-			includeField += fmt.Sprintf("%s %s,", field.ColumnName, dataType) + fmt.Sprintln()
+			includeField += fmt.Sprintf("	%s %s,", utils.QuotaName(field.ColumnName), dataType) + fmt.Sprintln()
 		}
 		if len(primaryKeysMap) > 0 {
 			keys := primaryKeysMap[tableName]
+			for i, key := range keys {
+				keys[i] = utils.QuotaName(key)
+			}
 			if len(keys) > 0 {
-				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
+				includeField += fmt.Sprintf("	primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
 			}
 		}
 		if len(uniqueKeysMap) > 0 {
 			uniqueKeys := uniqueKeysMap[tableName]
 			for _, columns := range uniqueKeys {
-				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
+				for i, column := range columns {
+					columns[i] = utils.QuotaName(column)
+				}
+				includeField += fmt.Sprintf("	unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
 			}
 		}
 
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, tableName, includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 
@@ -439,11 +445,4 @@ func (p PGOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string, p
 		return
 	}
 	return
-}
-
-func init() {
-	err := dboperator.RegisterDS(DBTypePG, NewPGOperator())
-	if err != nil {
-		panic(err)
-	}
 }

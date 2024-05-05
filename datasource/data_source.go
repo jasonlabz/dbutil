@@ -1,24 +1,29 @@
-package dboperator
+package datasource
 
 import (
 	"context"
 	"errors"
 	"fmt"
 
+	"github.com/jasonlabz/dbutil/dboperator"
+	"github.com/jasonlabz/dbutil/dboperator/mysql"
+	"github.com/jasonlabz/dbutil/dboperator/oracle"
+	"github.com/jasonlabz/dbutil/dboperator/postgresql"
+	"github.com/jasonlabz/dbutil/dboperator/sqlserver"
 	"github.com/jasonlabz/dbutil/dbx"
 )
 
 var dsMap = make(map[dbx.DBType]*DS)
 
 type DS struct {
-	Operator IOperator
+	Operator dboperator.IOperator
 }
 
-func (ds *DS) Trans2CommonField(dataType string) *Field {
+func (ds *DS) Trans2CommonField(dataType string) *dboperator.Field {
 	return ds.Operator.Trans2CommonField(dataType)
 }
 
-func (ds *DS) Trans2DataType(field *Field) string {
+func (ds *DS) Trans2DataType(field *dboperator.Field) string {
 	return ds.Operator.Trans2DataType(field)
 }
 
@@ -43,22 +48,22 @@ func (ds *DS) Close(dbName string) error {
 }
 
 // GetTablesUnderSchema 获取该逻辑库下所有表名
-func (ds *DS) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*LogicDBInfo, err error) {
+func (ds *DS) GetTablesUnderSchema(ctx context.Context, dbName string, schemas []string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
 	return ds.Operator.GetTablesUnderSchema(ctx, dbName, schemas)
 }
 
 // GetTablesUnderDB 获取该库下所有逻辑库及表名
-func (ds *DS) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*LogicDBInfo, err error) {
+func (ds *DS) GetTablesUnderDB(ctx context.Context, dbName string) (dbTableMap map[string]*dboperator.LogicDBInfo, err error) {
 	return ds.Operator.GetTablesUnderDB(ctx, dbName)
 }
 
 // GetColumns 获取指定库所有逻辑库及表下字段列表
-func (ds *DS) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*TableColInfo, err error) {
+func (ds *DS) GetColumns(ctx context.Context, dbName string) (dbTableColMap map[string]map[string]*dboperator.TableColInfo, err error) {
 	return ds.Operator.GetColumns(ctx, dbName)
 }
 
 // GetColumnsUnderTable 获取指定库表下字段列表
-func (ds *DS) GetColumnsUnderTable(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*TableColInfo, err error) {
+func (ds *DS) GetColumnsUnderTable(ctx context.Context, dbName, logicDBName string, tableNames []string) (tableColMap map[string]*dboperator.TableColInfo, err error) {
 	return ds.Operator.GetColumnsUnderTables(ctx, dbName, logicDBName, tableNames)
 }
 
@@ -78,7 +83,7 @@ func (ds *DS) GetTableUniqueKeys(ctx context.Context, dbName string, schemaName 
 }
 
 // ExecuteDDL 执行DDL
-func (ds *DS) ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string, uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*Field) (ddlSQL string, err error) {
+func (ds *DS) ExecuteDDL(ctx context.Context, dbName, schemaName string, primaryKeysMap map[string][]string, uniqueKeysMap map[string]map[string][]string, tableFieldsMap map[string][]*dboperator.Field) (ddlSQL string, err error) {
 	return ds.Operator.ExecuteDDL(ctx, dbName, schemaName, primaryKeysMap, uniqueKeysMap, tableFieldsMap)
 }
 
@@ -88,7 +93,7 @@ func (ds *DS) GetDataBySQL(ctx context.Context, dbName, sqlStatement string) (ro
 }
 
 // GetTableData 执行查询表数据, pageInfo为nil时不分页
-func (ds *DS) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *Pagination) (rows []map[string]interface{}, err error) {
+func (ds *DS) GetTableData(ctx context.Context, dbName, schemaName, tableName string, pageInfo *dboperator.Pagination) (rows []map[string]interface{}, err error) {
 	return ds.Operator.GetTableData(ctx, dbName, schemaName, tableName, pageInfo)
 }
 
@@ -102,7 +107,7 @@ func LoadDS(dataSourceType dbx.DBType) (ds *DS, err error) {
 	return
 }
 
-func RegisterDS(dataSourceType dbx.DBType, operator IOperator) error {
+func RegisterDS(dataSourceType dbx.DBType, operator dboperator.IOperator) error {
 	var ok bool
 	_, ok = dsMap[dataSourceType]
 	if ok {
@@ -112,4 +117,26 @@ func RegisterDS(dataSourceType dbx.DBType, operator IOperator) error {
 		Operator: operator,
 	}
 	return nil
+}
+
+func init() {
+	err := RegisterDS(dbx.DBTypeMySQL, mysql.NewMySQLOperator())
+	if err != nil {
+		panic(err)
+	}
+
+	err = RegisterDS(dbx.DBTypeOracle, oracle.NewOracleOperator())
+	if err != nil {
+		panic(err)
+	}
+
+	err = RegisterDS(dbx.DBTypePostgres, postgresql.NewPGOperator())
+	if err != nil {
+		panic(err)
+	}
+
+	err = RegisterDS(dbx.DBTypeSqlserver, sqlserver.NewSqlserverOperator())
+	if err != nil {
+		panic(err)
+	}
 }

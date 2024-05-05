@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jasonlabz/dbutil/core/utils"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 	"strings"
 )
-
-const DBTypeMYSQL dbx.DBType = dbx.DBTypeMySQL
 
 func NewMySQLOperator() dboperator.IOperator {
 	return &MySQLOperator{}
@@ -195,7 +194,7 @@ func (m MySQLOperator) GetColumns(ctx context.Context, dbName string) (dbTableCo
 			"where " +
 			"t.TABLE_TYPE = 'BASE TABLE' " +
 			"AND t.TABLE_SCHEMA NOT IN ('mysql', 'sys', 'performance_schema', 'information_schema') " +
-			"ORDER BY t.TABLE_NAME, c.COLUMN_NAME").
+			"ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION").
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return
@@ -268,7 +267,7 @@ func (m MySQLOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicD
 			"t.TABLE_TYPE = 'BASE TABLE' "+
 			"AND t.TABLE_SCHEMA = ? "+
 			"AND t.TABLE_NAME IN ? "+
-			"ORDER BY t.TABLE_NAME, c.COLUMN_NAME", logicDBName, tableNames).
+			"ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION", logicDBName, tableNames).
 		Find(&gormTableColumns)
 	if len(gormTableColumns) == 0 {
 		return
@@ -359,12 +358,12 @@ func (m MySQLOperator) GetTableUniqueKeys(ctx context.Context, dbName string, sc
 	tableList := strings.Join(queryTables, ",")
 	tableList = "(" + tableList + ")"
 	err = db.DB.WithContext(ctx).Raw(
-		`SELECT k.CONSTRAINT_NAME,k.TABLE_SCHEMA,k.TABLE_NAME,k.COLUMN_NAME
+		`SELECT k.CONSTRAINT_NAME as constraint_name,k.TABLE_SCHEMA as schema_name,k.TABLE_NAME as table_name,k.COLUMN_NAME as column_name
 FROM information_schema.table_constraints t
 JOIN information_schema.key_column_usage k
 USING(constraint_name,table_schema,table_name)
 WHERE t.constraint_type='UNIQUE' and  TABLE_SCHEMA = '` + schemaName + `' and 
-    cu.Table_Name IN ` + tableList).Scan(&tableUniqueKeys).Error
+    k.Table_Name IN ` + tableList).Scan(&tableUniqueKeys).Error
 	if err != nil {
 		return
 	}
@@ -373,7 +372,7 @@ WHERE t.constraint_type='UNIQUE' and  TABLE_SCHEMA = '` + schemaName + `' and
 		if !ok {
 			uniqueMap = make(map[string][]string)
 		}
-		uniqueMap[val.IndexName] = append(uniqueMap[val.IndexName], val.ColumnName)
+		uniqueMap[val.ConstraintName] = append(uniqueMap[val.ConstraintName], val.ColumnName)
 		uniqueKeyInfo[val.TableName] = uniqueMap
 	}
 	return
@@ -391,9 +390,10 @@ func (m MySQLOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string
 	}
 
 	//ddlSQL := ""
-	ddlTemplate := `create if not exist table "%s" (
-						%s 
-					)`
+	ddlTemplate := `
+create table if not exists %s (
+	%s
+);`
 	for tableName, fields := range tableFieldsMap {
 		var includeField string
 		for _, field := range fields {
@@ -401,10 +401,13 @@ func (m MySQLOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string
 				continue
 			}
 			dataType := m.Trans2DataType(field)
-			includeField += fmt.Sprintf("%s %s,", field.ColumnName, dataType) + fmt.Sprintln()
+			includeField += fmt.Sprintf("%s %s,", utils.QuotaName(field.ColumnName), dataType) + fmt.Sprintln()
 		}
 		if len(primaryKeysMap) > 0 {
 			keys := primaryKeysMap[tableName]
+			for i, key := range keys {
+				keys[i] = utils.QuotaName(key)
+			}
 			if len(keys) > 0 {
 				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
 			}
@@ -412,6 +415,9 @@ func (m MySQLOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string
 		if len(uniqueKeysMap) > 0 {
 			uniqueKeys := uniqueKeysMap[tableName]
 			for _, columns := range uniqueKeys {
+				for i, column := range columns {
+					columns[i] = utils.QuotaName(column)
+				}
 				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
 			}
 		}
@@ -419,7 +425,7 @@ func (m MySQLOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, tableName, includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 
@@ -428,11 +434,4 @@ func (m MySQLOperator) ExecuteDDL(ctx context.Context, dbName, schemaName string
 		return
 	}
 	return
-}
-
-func init() {
-	err := dboperator.RegisterDS(DBTypeMYSQL, NewMySQLOperator())
-	if err != nil {
-		panic(err)
-	}
 }

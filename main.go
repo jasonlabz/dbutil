@@ -1,10 +1,12 @@
-package dbutil
+package main
 
 import (
 	"context"
 	"errors"
 	"flag"
 	"github.com/bytedance/sonic"
+	"github.com/jasonlabz/dbutil/core/utils"
+	"github.com/jasonlabz/dbutil/datasource"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 	"github.com/jasonlabz/dbutil/log"
@@ -38,13 +40,23 @@ func (i inputParam) validateParam() error {
 func main() {
 	ctx := context.Background()
 	var params string
-	//var dataxPath string
 	var ddlSavePath string
-	flag.StringVar(&params, "c", "", "源库配置信息以及目标库配置信息,{\"source\":{},\"target\":{}}")
-	//flag.StringVar(&dataxPath, "d", "", "datax同步工具目录，可不填，则不执行datax任务")
-	flag.StringVar(&ddlSavePath, "p", "", "ddl语句配置文件保存位置，默认不保存")
-	//writeSQL := flag.Int("l", 0, "拉取数量")
-	flag.Parse()
+	var skip bool
+	filePath := "./conf.json"
+	exist := utils.IsExist(filePath)
+
+	if !exist {
+		flag.StringVar(&params, "c", "", "源库配置信息以及目标库配置信息,{\"source\":{},\"target\":{}}")
+		flag.StringVar(&ddlSavePath, "p", "", "ddl语句配置文件保存位置，默认不保存")
+		flag.BoolVar(&skip, "s", false, "ddl语句配置文件保存位置，默认不保存")
+		flag.Parse()
+	} else {
+		file, err := os.ReadFile(filePath)
+		if err != nil {
+			log.DefaultLogger().Fatal("请配置conf.json")
+		}
+		params = string(file)
+	}
 
 	if params == "" {
 		log.DefaultLogger().Fatal("请传入参数, 如: -c ''")
@@ -63,7 +75,7 @@ func main() {
 	paramStruct.Source.DBName = "source"
 	targetDBType := paramStruct.Target.DBType
 	paramStruct.Target.DBName = "target"
-	sourceDS, err := dboperator.LoadDS(sourceDBType)
+	sourceDS, err := datasource.LoadDS(sourceDBType)
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal(err.Error())
 	}
@@ -75,10 +87,6 @@ func main() {
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal("数据库查询失败")
 	}
-	//db, err := sourceDS.GetDB(paramStruct.Source.DBName)
-	//if err != nil {
-	//	log.DefaultLogger().WithError(err).Fatal("get db error")
-	//}
 
 	tables := make([]string, 0)
 	for _, tableInfos := range tableMap {
@@ -91,24 +99,46 @@ func main() {
 		log.DefaultLogger().WithError(getColumnErr).Fatal("get table column error")
 	}
 
-	targetDS, err := dboperator.LoadDS(targetDBType)
+	tablePrimeKeys, err := sourceDS.GetTablePrimeKeys(ctx, paramStruct.Source.DBName, paramStruct.SourceSchema, tables)
+	if err != nil {
+		log.DefaultLogger().WithError(err).Error("GetTablePrimeKeys error")
+	}
+
+	tableUniqueKeys, err := sourceDS.GetTableUniqueKeys(ctx, paramStruct.Source.DBName, paramStruct.SourceSchema, tables)
+	if err != nil {
+		log.DefaultLogger().WithError(err).Error("GetTableUniqueKeys error")
+	}
+
+	targetDS, err := datasource.LoadDS(targetDBType)
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal(err.Error())
 	}
-	fields := make([]*dboperator.Field, 0)
+
+	err = targetDS.Open(&paramStruct.Target)
+	if err != nil {
+		log.DefaultLogger().WithError(err).Fatal("数据库连接失败")
+	}
+
+	if !skip {
+		_ = targetDS.CreateSchema(ctx, paramStruct.Target.DBName, paramStruct.TargetSchema, "")
+	}
+
 	fieldsMap := make(map[string][]*dboperator.Field, 0)
+
 	for _, info := range columnsUnderTables {
 		tableName := info.TableName
+		fields := make([]*dboperator.Field, 0)
 		for _, columnInfo := range info.ColumnInfoList {
 			field := sourceDS.Trans2CommonField(columnInfo.DataType)
 			if field == nil {
 				continue
 			}
+			field.ColumnName = columnInfo.ColumnName
 			fields = append(fields, field)
 		}
 		fieldsMap[tableName] = fields
 	}
-	ddlSQL, err := targetDS.ExecuteDDL(ctx, paramStruct.Target.DBName, paramStruct.TargetSchema, nil, nil, fieldsMap)
+	ddlSQL, err := targetDS.ExecuteDDL(ctx, paramStruct.Target.DBName, paramStruct.TargetSchema, tablePrimeKeys, tableUniqueKeys, fieldsMap)
 	if err != nil {
 		log.DefaultLogger().WithError(err).Fatal("execute ddl error")
 	}

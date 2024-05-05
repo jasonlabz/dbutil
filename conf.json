@@ -1,0 +1,27 @@
+{
+  "source": {
+    "db_name": "source",
+    "dsn": "root:ji7N6FGy!~04@tcp(1.117.232.208:8306)/typecho?charset=utf8mb4&parseTime=True&loc=Local&timeout=30s",
+    "db_type": "mysql",
+    "host": "192.168.3.30",
+    "port": 0,
+    "user": "",
+    "password": "",
+    "database": "",
+    "charset": ""
+  },
+  "target": {
+    "db_name": "target",
+    "dsn": "user=postgres password=openthedoor host=192.168.3.30 port=5432 dbname=postgres sslmode=disable TimeZone=Asia/Shanghai",
+    "db_type": "postgres",
+    "host": "192.168.3.30",
+    "port": 0,
+    "user": "",
+    "password": "",
+    "database": "",
+    "charset": ""
+  },
+  "sourceSchema": "typecho",
+  "targetSchema": "public",
+  "tableList": []
+}

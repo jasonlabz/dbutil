@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jasonlabz/dbutil/core/utils"
 	"strings"
 
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 )
-
-const DBTypeOracle dbx.DBType = dbx.DBTypeOracle
 
 func NewOracleOperator() dboperator.IOperator {
 	return &OracleOperator{}
@@ -294,12 +293,16 @@ func (o OracleOperator) CreateSchema(ctx context.Context, dbName, schemaName, co
 	if err != nil {
 		return
 	}
-	config, err := dbx.GetDBConfig(dbName)
+	var count int64
+	err = db.DB.WithContext(ctx).Raw(fmt.Sprintf("SELECT COUNT(*) FROM ALL_USERS WHERE UPPER(USERNAME) = '%s'", schemaName)).Scan(&count).Error
 	if err != nil {
 		return
 	}
-	password := config.Password
-	err = db.DB.WithContext(ctx).Exec(fmt.Sprintf("create user %s identified by %s", schemaName, password)).Error
+	if count > 0 {
+		return
+	}
+
+	err = db.DB.WithContext(ctx).Exec(fmt.Sprintf("create user %s identified by %s", schemaName, schemaName)).Error
 	if err != nil {
 		return
 	}
@@ -368,7 +371,7 @@ func (o OracleOperator) GetTableUniqueKeys(ctx context.Context, dbName string, s
 		if !ok {
 			uniqueMap = make(map[string][]string)
 		}
-		uniqueMap[val.IndexName] = append(uniqueMap[val.IndexName], val.ColumnName)
+		uniqueMap[val.ConstraintName] = append(uniqueMap[val.ConstraintName], val.ColumnName)
 		uniqueKeyInfo[val.TableName] = uniqueMap
 	}
 	return
@@ -386,9 +389,10 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, schemaName strin
 	}
 
 	//ddlSQL := ""
-	ddlTemplate := `create if not exist table "%s" (
-						%s 
-					)`
+	ddlTemplate := `
+create table %s (
+    %s
+);`
 	for tableName, fields := range tableFieldsMap {
 		var includeField string
 		for _, field := range fields {
@@ -396,25 +400,31 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, schemaName strin
 				continue
 			}
 			dataType := o.Trans2DataType(field)
-			includeField += fmt.Sprintf("%s %s,", field.ColumnName, dataType) + fmt.Sprintln()
+			includeField += fmt.Sprintf("	%s %s,", utils.QuotaName(field.ColumnName), dataType) + fmt.Sprintln()
 		}
 		if len(primaryKeysMap) > 0 {
 			keys := primaryKeysMap[tableName]
+			for i, key := range keys {
+				keys[i] = utils.QuotaName(key)
+			}
 			if len(keys) > 0 {
-				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
+				includeField += fmt.Sprintf("	primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
 			}
 		}
 		if len(uniqueKeysMap) > 0 {
 			uniqueKeys := uniqueKeysMap[tableName]
 			for _, columns := range uniqueKeys {
-				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
+				for i, column := range columns {
+					columns[i] = utils.QuotaName(column)
+				}
+				includeField += fmt.Sprintf("	unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
 			}
 		}
 
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, tableName, includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 
@@ -423,11 +433,4 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, schemaName strin
 		return
 	}
 	return
-}
-
-func init() {
-	err := dboperator.RegisterDS(DBTypeOracle, NewOracleOperator())
-	if err != nil {
-		panic(err)
-	}
 }

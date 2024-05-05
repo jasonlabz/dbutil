@@ -251,3 +251,10 @@ func IsTrueOrNot[T any](express bool, firstVal, secondVal T) T {
 	}
 	return secondVal
 }
+
+func QuotaName(origin string) string {
+	if strings.HasPrefix(origin, "\"") {
+		return origin
+	}
+	return fmt.Sprintf("\"%s\"", origin)
+}
