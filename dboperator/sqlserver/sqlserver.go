@@ -430,7 +430,7 @@ create table %s (
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), utils.QuotaName(tableName), includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, tableName, utils.QuotaName(tableName), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 
