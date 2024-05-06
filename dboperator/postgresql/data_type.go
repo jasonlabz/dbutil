@@ -29,19 +29,19 @@ func (p PGOperator) Trans2CommonField(dataType string) *dboperator.Field {
 	}
 
 	switch typeStr {
-	case "char", "varchar", "character varying", "character":
+	case "char", "bpchar", "varchar", "character varying", "character":
 		// data_type: varchar、varchar(100)、etc...
 		field = *dboperator.StringField
-	case "date", "time", "timetz", "time with time zone", "timestamp with time zone", "timestamp", "timestamptz":
+	case "date", "time", "timetz", "time without time zone", "time with time zone", "timestamp with time zone", "timestamp without time zone", "timestamp", "timestamptz":
 		field = *dboperator.TimeField
 		switch typeStr {
 		case "date":
 			field.TimeType = "date"
-		case "time":
+		case "time", "time without time zone":
 			field.TimeType = "time"
 		case "time with time zone", "timetz":
 			field.TimeType = "timetz"
-		case "timestamp":
+		case "timestamp", "timestamp without time zone":
 			field.TimeType = "timestamp"
 		case "timestamp with time zone", "timestamptz":
 			field.TimeType = "timestamptz"

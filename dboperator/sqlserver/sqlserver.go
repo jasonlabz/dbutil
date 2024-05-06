@@ -240,7 +240,8 @@ func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, lo
 		Raw("SELECT TABLE_SCHEMA as table_schema, "+
 			"TABLE_NAME as table_name, "+
 			"COLUMN_NAME as column_name, "+
-			"DATA_TYPE as data_type "+
+			"DATA_TYPE as data_type,"+
+			"is_nullable "+
 			"FROM INFORMATION_SCHEMA.Columns "+
 			"WHERE TABLE_SCHEMA = ? "+
 			"AND TABLE_NAME IN ? "+

@@ -178,7 +178,29 @@ func (o OracleOperator) GetColumns(ctx context.Context, dbName string) (dbTableC
 			"atc.TABLE_NAME as table_name, " +
 			"atc.Column_Name as column_name," +
 			" acc.COMMENTS as comments," +
-			"atc.Data_TYPE  as data_type " +
+			"case" +
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
+			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then" +
+			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')'" +
+			"    else atc.Data_TYPE" +
+			"end  as data_type," +
+			"case " +
+			"    when atc.NULLABLE = 'Y' then" +
+			"        1" +
+			"    else" +
+			"        0" +
+			"end as is_nullable " +
 			"FROM ALL_TAB_COLUMNS atc " +
 			"left join all_col_comments acc " +
 			"on acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME " +
@@ -245,7 +267,29 @@ func (o OracleOperator) GetColumnsUnderTables(ctx context.Context, dbName, logic
 			"atc.TABLE_NAME as table_name, "+
 			"atc.Column_Name as column_name,"+
 			" acc.COMMENTS as comments,"+
-			"atc.Data_TYPE  as data_type "+
+			"case"+
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
+			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then"+
+			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')'"+
+			"    else atc.Data_TYPE"+
+			"end  as data_type,"+
+			"case "+
+			"    when atc.NULLABLE = 'Y' then"+
+			"        1"+
+			"    else"+
+			"        0"+
+			"end as is_nullable "+
 			"FROM ALL_TAB_COLUMNS atc "+
 			"left join all_col_comments acc "+
 			"on acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME "+

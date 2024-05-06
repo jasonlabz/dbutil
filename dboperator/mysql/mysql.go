@@ -401,7 +401,7 @@ create table if not exists %s (
 				continue
 			}
 			dataType := m.Trans2DataType(field)
-			includeField += fmt.Sprintf("%s %s,", utils.QuotaName(field.ColumnName), dataType) + fmt.Sprintln()
+			includeField += fmt.Sprintf("	%s %s,", utils.QuotaName(field.ColumnName), dataType) + fmt.Sprintln()
 		}
 		if len(primaryKeysMap) > 0 {
 			keys := primaryKeysMap[tableName]
@@ -409,7 +409,7 @@ create table if not exists %s (
 				keys[i] = utils.QuotaName(key)
 			}
 			if len(keys) > 0 {
-				includeField += fmt.Sprintf("primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
+				includeField += fmt.Sprintf("	primary key (%s),", strings.Join(keys, ",")) + fmt.Sprintln()
 			}
 		}
 		if len(uniqueKeysMap) > 0 {
@@ -418,7 +418,7 @@ create table if not exists %s (
 				for i, column := range columns {
 					columns[i] = utils.QuotaName(column)
 				}
-				includeField += fmt.Sprintf("unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
+				includeField += fmt.Sprintf("	unique (%s),", strings.Join(columns, ",")) + fmt.Sprintln()
 			}
 		}
 

@@ -82,7 +82,7 @@ func (p PGOperator) GetTablesUnderSchema(ctx context.Context, dbName string, sch
 		return
 	}
 	err = db.DB.WithContext(ctx).
-		Raw("SELECT tb.schemaname as table_schema, " +
+		Raw("SELECT distinct tb.schemaname as table_schema, " +
 			"tb.tablename as table_name, " +
 			"d.description as comments " +
 			"FROM pg_tables tb " +
@@ -129,7 +129,7 @@ func (p PGOperator) GetTablesUnderDB(ctx context.Context, dbName string) (dbTabl
 		return
 	}
 	err = db.DB.WithContext(ctx).
-		Raw("SELECT tb.schemaname as table_schema, " +
+		Raw("SELECT  distinct  tb.schemaname as table_schema, " +
 			"tb.tablename as table_name, " +
 			"d.description as comments " +
 			"FROM pg_tables tb " +
@@ -176,11 +176,18 @@ func (p PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMa
 		return
 	}
 	err = db.DB.WithContext(ctx).
-		Raw("select " +
-			"ic.table_schema table_schema, " +
+		Raw("select distinct ic.table_schema table_schema," +
 			"ic.table_name table_name, " +
-			"ic.column_name as column_name, " +
-			"ic.udt_name as data_type, " +
+			"ic.column_name as column_name," +
+			"case" +
+			"	when ic.udt_name='varchar' or ic.udt_name='character varying' then" +
+			"		ic.udt_name || '(' || ic.character_maximum_length || ')'" +
+			"	when ic.udt_name='numeric' or ic.udt_name='decimal' then" +
+			"		ic.udt_name || '(' || ic.numeric_precision || ',' || ic.numeric_scale || ')'" +
+			"	when ic.udt_name='timestamp' and ic.datetime_precision <> 0 then" +
+			"		ic.udt_name || '(' || ic.datetime_precision || ')'" +
+			"	else ic.udt_name" +
+			"end as data_type," +
 			"d.description as comments " +
 			"from " +
 			"information_schema.columns ic " +
@@ -249,12 +256,26 @@ func (p PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBNa
 		return
 	}
 	err = db.DB.WithContext(ctx).
-		Raw("select "+
-			"ic.table_schema table_schema, "+
+		Raw("select distinct ic.table_schema table_schema,"+
 			"ic.table_name table_name, "+
-			"ic.column_name as column_name, "+
-			"ic.udt_name as data_type, "+
-			"d.description as comments "+
+			"ic.column_name as column_name,"+
+			"case"+
+			"	when ic.udt_name='varchar' or ic.udt_name='character varying' then"+
+			"		ic.udt_name || '(' || ic.character_maximum_length || ')'"+
+			"	when ic.udt_name='numeric' or ic.udt_name='decimal' then"+
+			"		ic.udt_name || '(' || ic.numeric_precision || ',' || ic.numeric_scale || ')'"+
+			"	when ic.udt_name='timestamp' and ic.datetime_precision <> 0 then"+
+			"		ic.udt_name || '(' || ic.datetime_precision || ')'"+
+			"	else ic.udt_name"+
+			"end as data_type,d.description as comments,"+
+			"case"+
+			"    when ic.is_nullable = 'YES' then"+
+			"        true"+
+			"else"+
+			"    false"+
+			"end as is_nullable,"+
+			"d.description as comments,"+
+			"ic.ordinal_position "+
 			"from "+
 			"information_schema.columns ic "+
 			"JOIN pg_class c ON c.relname = ic.table_name "+
@@ -334,14 +355,14 @@ func (p PGOperator) GetTablePrimeKeys(ctx context.Context, dbName string, schema
 	tableList := strings.Join(queryTables, ",")
 	tableList = "(" + tableList + ")"
 
-	err = db.DB.WithContext(ctx).Raw(`SELECT tc.constraint_name as constraint_name,
+	err = db.DB.WithContext(ctx).Raw(`SELECT distinct tc.constraint_name as constraint_name,
       tc.constraint_type,kcu.table_schema as schema_name,
        kcu.TABLE_NAME as table_name, kcu.COLUMN_NAME as column_name
   FROM information_schema.table_constraints AS tc
   JOIN information_schema.key_column_usage  AS kcu
     ON tc.constraint_name = kcu.constraint_name
- WHERE tc.constraint_type = 'PRIMARY KEY' AND kcu.table_schema = '` + schemaName + `' AND kcu.Table_Name IN (` + strings.Join(tables, ",") + `)`).
-		Scan(tablePrimeKeys).Error
+ WHERE tc.constraint_type = 'PRIMARY KEY' AND kcu.table_schema = '` + schemaName + `' AND kcu.Table_Name IN (` + strings.Join(queryTables, ",") + `)`).
+		Scan(&tablePrimeKeys).Error
 
 	if err != nil {
 		return
@@ -368,14 +389,14 @@ func (p PGOperator) GetTableUniqueKeys(ctx context.Context, dbName string, schem
 	}
 	tableList := strings.Join(queryTables, ",")
 	tableList = "(" + tableList + ")"
-	err = db.DB.WithContext(ctx).Raw(`SELECT tc.constraint_name as constraint_name,
+	err = db.DB.WithContext(ctx).Raw(`SELECT distinct tc.constraint_name as constraint_name,
       tc.constraint_type,kcu.table_schema as schema_name,
        kcu.TABLE_NAME as table_name, kcu.COLUMN_NAME as column_name
   FROM information_schema.table_constraints AS tc
   JOIN information_schema.key_column_usage  AS kcu
     ON tc.constraint_name = kcu.constraint_name
- WHERE tc.constraint_type = 'UNIQUE' AND kcu.table_schema = '` + schemaName + `' AND kcu.Table_Name IN (` + strings.Join(tables, ",") + `)`).
-		Scan(tableUniqueKeys).Error
+ WHERE tc.constraint_type = 'UNIQUE' AND kcu.table_schema = '` + schemaName + `' AND kcu.Table_Name IN (` + strings.Join(queryTables, ",") + `)`).
+		Scan(&tableUniqueKeys).Error
 	if err != nil {
 		return
 	}
