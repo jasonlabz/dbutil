@@ -425,7 +425,7 @@ create table if not exists %s (
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, fmt.Sprintf("%s.%s", utils.QuotaName(schemaName), utils.QuotaName(tableName)), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 

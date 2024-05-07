@@ -29,10 +29,10 @@ func (s SqlServerOperator) Trans2CommonField(dataType string) *dboperator.Field 
 	}
 
 	switch typeStr {
-	case "char", "varchar", "nchar", "character", "nvarchar", "uniqueidentifier":
+	case "char", "varchar", "nchar", "character", "nvarchar", "uniqueidentifier", "timestamp":
 		// data_type: varchar、varchar(100)、etc...
 		field = *dboperator.StringField
-	case "date", "time", "smalldatetime", "datetime", "datetime2", "timestamp":
+	case "date", "time", "smalldatetime", "datetime", "datetime2":
 		field = *dboperator.TimeField
 		switch typeStr {
 		case "date":
@@ -41,8 +41,6 @@ func (s SqlServerOperator) Trans2CommonField(dataType string) *dboperator.Field 
 			field.TimeType = "time"
 		case "smalldatetime", "datetime", "datetime2":
 			field.TimeType = "datetime"
-		case "timestamp":
-			field.TimeType = "timestamp"
 		default:
 			field.TimeType = "datetime"
 		}
@@ -120,8 +118,6 @@ func (s SqlServerOperator) Trans2DataType(field *dboperator.Field) string {
 			timeType = "time"
 		case "datetime":
 			timeType = "datetime"
-		case "timestamp", "timestamptz", "timestampltz":
-			timeType = "timestamp"
 		default:
 			timeType = "datetime"
 		}

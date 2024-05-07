@@ -256,23 +256,23 @@ func (p PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBNa
 		return
 	}
 	err = db.DB.WithContext(ctx).
-		Raw("select distinct ic.table_schema table_schema,"+
-			"ic.table_name table_name, "+
+		Raw("select distinct ic.table_schema as table_schema,"+
+			"ic.table_name as table_name, "+
 			"ic.column_name as column_name,"+
-			"case"+
-			"	when ic.udt_name='varchar' or ic.udt_name='character varying' then"+
-			"		ic.udt_name || '(' || ic.character_maximum_length || ')'"+
-			"	when ic.udt_name='numeric' or ic.udt_name='decimal' then"+
-			"		ic.udt_name || '(' || ic.numeric_precision || ',' || ic.numeric_scale || ')'"+
-			"	when ic.udt_name='timestamp' and ic.datetime_precision <> 0 then"+
-			"		ic.udt_name || '(' || ic.datetime_precision || ')'"+
-			"	else ic.udt_name"+
-			"end as data_type,d.description as comments,"+
-			"case"+
-			"    when ic.is_nullable = 'YES' then"+
-			"        true"+
-			"else"+
-			"    false"+
+			"case "+
+			"	when ic.udt_name='varchar' or ic.udt_name='character varying' then "+
+			"		ic.udt_name || '(' || ic.character_maximum_length || ')' "+
+			"	when ic.udt_name='numeric' or ic.udt_name='decimal' then "+
+			"		ic.udt_name || '(' || ic.numeric_precision || ',' || ic.numeric_scale || ')' "+
+			"	when ic.udt_name='timestamp' and ic.datetime_precision <> 0 then "+
+			"		ic.udt_name || '(' || ic.datetime_precision || ')' "+
+			"	else ic.udt_name "+
+			"end as data_type,d.description as comments, "+
+			"case "+
+			" 	when ic.is_nullable = 'YES' then "+
+			"   	true "+
+			" 	else "+
+			"   	false "+
 			"end as is_nullable,"+
 			"d.description as comments,"+
 			"ic.ordinal_position "+
@@ -457,7 +457,7 @@ create table if not exists %s (
 		includeField = strings.TrimSpace(includeField)
 		includeField = strings.Trim(includeField, ",")
 
-		ddlStr := fmt.Sprintf(ddlTemplate, utils.QuotaName(tableName), includeField)
+		ddlStr := fmt.Sprintf(ddlTemplate, fmt.Sprintf("%s.%s", utils.QuotaName(schemaName), utils.QuotaName(tableName)), includeField)
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
 
