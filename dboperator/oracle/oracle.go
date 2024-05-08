@@ -178,28 +178,28 @@ func (o OracleOperator) GetColumns(ctx context.Context, dbName string) (dbTableC
 			"atc.TABLE_NAME as table_name, " +
 			"atc.Column_Name as column_name," +
 			" acc.COMMENTS as comments," +
-			"case" +
-			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
-			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
-			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
-			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
-			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'" +
-			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'" +
-			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then" +
-			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')'" +
-			"    else atc.Data_TYPE" +
-			"end  as data_type," +
 			"case " +
-			"    when atc.NULLABLE = 'Y' then" +
-			"        1" +
-			"    else" +
-			"        0" +
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' " +
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' " +
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' " +
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' " +
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' " +
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' " +
+			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then " +
+			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')' " +
+			"    else atc.Data_TYPE " +
+			"end  as data_type, " +
+			"case " +
+			"    when atc.NULLABLE = 'Y' then " +
+			"        'true' " +
+			"    else " +
+			"        'false' " +
 			"end as is_nullable " +
 			"FROM ALL_TAB_COLUMNS atc " +
 			"left join all_col_comments acc " +
@@ -267,28 +267,28 @@ func (o OracleOperator) GetColumnsUnderTables(ctx context.Context, dbName, logic
 			"atc.TABLE_NAME as table_name, "+
 			"atc.Column_Name as column_name,"+
 			" acc.COMMENTS as comments,"+
-			"case"+
-			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
-			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
-			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
-			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
-			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')'"+
-			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')'"+
-			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then"+
-			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')'"+
-			"    else atc.Data_TYPE"+
-			"end  as data_type,"+
 			"case "+
-			"    when atc.NULLABLE = 'Y' then"+
-			"        1"+
-			"    else"+
-			"        0"+
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' "+
+			"    when atc.Data_TYPE = 'NUMBER' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' "+
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' "+
+			"    when atc.Data_TYPE = 'DECIMAL' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' "+
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE = 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ')' "+
+			"    when atc.Data_TYPE = 'NUMERIC' and atc.DATA_PRECISION > 0 and atc.DATA_SCALE > 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.DATA_PRECISION || ',' || atc.DATA_SCALE || ')' "+
+			"    when atc.Data_TYPE = 'VARCHAR2' and atc.CHAR_LENGTH > 0 then "+
+			"                    atc.Data_TYPE || '(' || atc.CHAR_LENGTH || ')' "+
+			"    else atc.Data_TYPE "+
+			"end  as data_type, "+
+			"case "+
+			"    when atc.NULLABLE = 'Y' then "+
+			"        'true' "+
+			"    else "+
+			"        'false' "+
 			"end as is_nullable "+
 			"FROM ALL_TAB_COLUMNS atc "+
 			"left join all_col_comments acc "+
@@ -436,7 +436,7 @@ func (o OracleOperator) ExecuteDDL(ctx context.Context, dbName, schemaName strin
 	ddlTemplate := `
 create table %s (
     %s
-);`
+)`
 	for tableName, fields := range tableFieldsMap {
 		var includeField string
 		for _, field := range fields {
@@ -469,12 +469,15 @@ create table %s (
 		includeField = strings.Trim(includeField, ",")
 
 		ddlStr := fmt.Sprintf(ddlTemplate, fmt.Sprintf("%s.%s", utils.QuotaName(schemaName), utils.QuotaName(tableName)), includeField)
+		err = db.DB.WithContext(ctx).Exec(ddlStr).Error
+		if err != nil {
+			return
+		}
 		ddlSQL += ddlStr + fmt.Sprintln()
 	}
-
-	err = db.DB.WithContext(ctx).Exec(ddlSQL).Error
-	if err != nil {
-		return
-	}
+	//err = db.DB.WithContext(ctx).Exec(ddlSQL).Error
+	//if err != nil {
+	//	return
+	//}
 	return
 }

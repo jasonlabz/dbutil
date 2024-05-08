@@ -179,7 +179,14 @@ func (s SqlServerOperator) GetColumns(ctx context.Context, dbName string) (dbTab
 		Raw("SELECT TABLE_SCHEMA as table_schema, " +
 			"TABLE_NAME as table_name, " +
 			"COLUMN_NAME as column_name, " +
-			"DATA_TYPE as data_type " +
+			"case " +
+			"when DATA_TYPE = 'char' or DATA_TYPE = 'varchar' or DATA_TYPE = 'nchar' or DATA_TYPE = 'character' or DATA_TYPE = 'nvarchar' then " +
+			"                DATA_TYPE + '(' + cast(CHARACTER_MAXIMUM_LENGTH as varchar) + ')' " +
+			"when DATA_TYPE = 'numeric' or DATA_TYPE = 'decimal' then " +
+			"                DATA_TYPE + '(' + cast(NUMERIC_PRECISION as varchar)+','+cast(NUMERIC_SCALE as varchar) + ')' " +
+			"else " +
+			"    DATA_TYPE " +
+			"end  as data_type " +
 			"FROM INFORMATION_SCHEMA.Columns " +
 			"WHERE TABLE_SCHEMA NOT IN ('sys','INFORMATION_SCHEMA') " +
 			"ORDER BY TABLE_NAME, COLUMN_NAME").
@@ -240,7 +247,14 @@ func (s SqlServerOperator) GetColumnsUnderTables(ctx context.Context, dbName, lo
 		Raw("SELECT TABLE_SCHEMA as table_schema, "+
 			"TABLE_NAME as table_name, "+
 			"COLUMN_NAME as column_name, "+
-			"DATA_TYPE as data_type,"+
+			"case "+
+			"when DATA_TYPE = 'char' or DATA_TYPE = 'varchar' or DATA_TYPE = 'nchar' or DATA_TYPE = 'character' or DATA_TYPE = 'nvarchar' then "+
+			"                DATA_TYPE + '(' + cast(CHARACTER_MAXIMUM_LENGTH as varchar) + ')' "+
+			"when DATA_TYPE = 'numeric' or DATA_TYPE = 'decimal' then "+
+			"                DATA_TYPE + '(' + cast(NUMERIC_PRECISION as varchar)+','+cast(NUMERIC_SCALE as varchar) + ')' "+
+			"else "+
+			"    DATA_TYPE "+
+			"end  as data_type, "+
 			"is_nullable "+
 			"FROM INFORMATION_SCHEMA.Columns "+
 			"WHERE TABLE_SCHEMA = ? "+

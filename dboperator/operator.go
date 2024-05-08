@@ -59,13 +59,13 @@ type TablePrimeKey struct {
 }
 
 type GormTableColumn struct {
-	TableSchema     string `db:"table_schema" gorm:"table_schema"`
-	TableName       string `db:"table_name" gorm:"table_name"`
-	ColumnName      string `db:"column_name" gorm:"column_name"`
-	Comments        string `db:"comments" gorm:"comments"`
-	DataType        string `db:"data_type" gorm:"data_type"`
-	IsNullable      bool   `db:"is_nullable" gorm:"is_nullable"`           // 可否为null
-	OrdinalPosition int    `db:"ordinal_position" gorm:"ordinal_position"` // 字段序号
+	TableSchema string `db:"table_schema" gorm:"table_schema"`
+	TableName   string `db:"table_name" gorm:"table_name"`
+	ColumnName  string `db:"column_name" gorm:"column_name"`
+	Comments    string `db:"comments" gorm:"comments"`
+	DataType    string `db:"data_type" gorm:"data_type"`
+	//IsNullable      bool   `db:"is_nullable" gorm:"is_nullable"`           // 可否为null
+	OrdinalPosition int `db:"ordinal_position" gorm:"ordinal_position"` // 字段序号
 }
 
 type LogicDBInfo struct {

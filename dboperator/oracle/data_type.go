@@ -150,12 +150,14 @@ func (o OracleOperator) Trans2DataType(field *dboperator.Field) string {
 	case dboperator.TIME:
 		var timeType string
 		switch field.TimeType {
-		case "timestamp", "timestamptz":
-			timeType = "TIMESTAMP WITH TIME ZONE"
+		case "timestamp":
+			timeType = "timestamp"
+		case "timestamptz":
+			return "TIMESTAMP WITH TIME ZONE"
 		case "timestampltz":
-			timeType = "TIMESTAMP WITH LOCAL TIME ZONE"
+			return "TIMESTAMP WITH LOCAL TIME ZONE"
 		default:
-			timeType = "DATE"
+			return "DATE"
 		}
 
 		if field.Length == 0 {
@@ -163,7 +165,7 @@ func (o OracleOperator) Trans2DataType(field *dboperator.Field) string {
 		} else if field.Length == -1 {
 			return timeType + "(*)"
 		} else {
-			return fmt.Sprintf("%s(%d)", timeType, field.Length)
+			return fmt.Sprintf("timestamp(%d)", field.Length)
 		}
 	default:
 		log.DefaultLogger().Warn("handle with to default oracle type:%s", field.Type)
