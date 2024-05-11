@@ -55,20 +55,13 @@ func (o OracleOperator) Trans2CommonField(dataType string) *dboperator.Field {
 	case "number", "numeric", "decimal", "dec":
 		field = *dboperator.Float64Field
 		field.IsFixedNumber = true
-		if typeStr == "number" {
-			switch len(extra) {
-			case 0:
+		if typeStr == "number" && len(extra) == 1 {
+			if extra[0] <= "32" {
+				field.Type = dboperator.INT32
+				field.IsFixedNumber = false
+			} else {
 				field.Type = dboperator.INT64
 				field.IsFixedNumber = false
-			case 1:
-				if extra[0] <= "32" {
-					field.Type = dboperator.INT32
-					field.IsFixedNumber = false
-				} else {
-					field.Type = dboperator.INT64
-					field.IsFixedNumber = false
-				}
-			default:
 			}
 		}
 	case "double precision", "double", "binary_double":
