@@ -141,7 +141,7 @@ func (o OracleOperator) Trans2DataType(field *dboperator.Field) string {
 			return "CLOB"
 		}
 		if field.Length == 0 {
-			return "VARCHAR2"
+			return "VARCHAR2(500)"
 		} else if field.Length == -1 {
 			return "VARCHAR2(*)"
 		} else {

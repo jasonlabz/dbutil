@@ -194,7 +194,7 @@ func (m MySQLOperator) GetColumns(ctx context.Context, dbName string) (dbTableCo
 			"where " +
 			"t.TABLE_TYPE = 'BASE TABLE' " +
 			"AND t.TABLE_SCHEMA NOT IN ('mysql', 'sys', 'performance_schema', 'information_schema') " +
-			"ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION").
+			"ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION").
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return
@@ -267,7 +267,7 @@ func (m MySQLOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicD
 			"t.TABLE_TYPE = 'BASE TABLE' "+
 			"AND t.TABLE_SCHEMA = ? "+
 			"AND t.TABLE_NAME IN ? "+
-			"ORDER BY t.TABLE_NAME, c.ORDINAL_POSITION", logicDBName, tableNames).
+			"ORDER BY t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION", logicDBName, tableNames).
 		Find(&gormTableColumns)
 	if len(gormTableColumns) == 0 {
 		return

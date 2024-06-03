@@ -86,7 +86,7 @@ func (o OracleOperator) GetTablesUnderSchema(ctx context.Context, dbName string,
 			"TABLE_NAME as table_name, " +
 			"COMMENTS as comments " +
 			"FROM all_tab_comments " +
-			"WHERE OWNER IN " +
+			"WHERE TABLE_TYPE = 'TABLE' AND OWNER IN " +
 			"(" + strings.Join(schemas, ",") + ") " +
 			"ORDER BY OWNER, TABLE_NAME").
 		Find(&gormDBTables).Error
@@ -132,7 +132,7 @@ func (o OracleOperator) GetTablesUnderDB(ctx context.Context, dbName string) (db
 			"TABLE_NAME as table_name, " +
 			"COMMENTS as comments " +
 			"FROM all_tab_comments " +
-			"WHERE OWNER IN " +
+			"WHERE TABLE_TYPE = 'TABLE' AND OWNER IN " +
 			"(select SYS_CONTEXT('USERENV','CURRENT_SCHEMA') CURRENT_SCHEMA from dual) " +
 			"ORDER BY OWNER, TABLE_NAME").
 		Find(&gormDBTables).Error
@@ -203,9 +203,9 @@ func (o OracleOperator) GetColumns(ctx context.Context, dbName string) (dbTableC
 			"end as is_nullable " +
 			"FROM ALL_TAB_COLUMNS atc " +
 			"left join all_col_comments acc " +
-			"on acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME " +
+			"on acc.OWNER=atc.OWNER and acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME " +
 			"WHERE atc.OWNER IN (select SYS_CONTEXT('USERENV','CURRENT_SCHEMA') CURRENT_SCHEMA from dual) " +
-			"ORDER BY atc.OWNER, atc.TABLE_NAME, atc.Column_Name").
+			"ORDER BY atc.OWNER, atc.TABLE_NAME, atc.COLUMN_ID").
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return
@@ -292,10 +292,10 @@ func (o OracleOperator) GetColumnsUnderTables(ctx context.Context, dbName, logic
 			"end as is_nullable "+
 			"FROM ALL_TAB_COLUMNS atc "+
 			"left join all_col_comments acc "+
-			"on acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME "+
+			"on  acc.OWNER=atc.OWNER and acc.TABLE_NAME = atc.TABLE_NAME and acc.COLUMN_NAME = atc.COLUMN_NAME "+
 			"WHERE atc.OWNER = ? "+
 			"AND atc.TABLE_NAME IN ? "+
-			"ORDER BY atc.OWNER, atc.TABLE_NAME, atc.Column_Name", logicDBName, tableNames).
+			"ORDER BY atc.OWNER, atc.TABLE_NAME, atc.COLUMN_ID", logicDBName, tableNames).
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return

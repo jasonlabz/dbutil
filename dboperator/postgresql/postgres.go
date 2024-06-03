@@ -198,7 +198,7 @@ func (p PGOperator) GetColumns(ctx context.Context, dbName string) (dbTableColMa
 			"AND ic.table_name NOT LIKE 'gp%' " +
 			"AND ic.table_name NOT LIKE 'sql_%' " +
 			"AND ic.table_schema <> 'information_schema' " +
-			"ORDER BY ic.table_name, ic.ordinal_position").
+			"ORDER BY ic.table_schema, ic.table_name, ic.ordinal_position").
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return
@@ -284,7 +284,7 @@ func (p PGOperator) GetColumnsUnderTables(ctx context.Context, dbName, logicDBNa
 			"where "+
 			"ic.table_schema = ? "+
 			"and ic.table_name in ? "+
-			"ORDER BY ic.table_name, ic.ordinal_position", logicDBName, tableNames).
+			"ORDER BY ic.table_schema, ic.table_name, ic.ordinal_position", logicDBName, tableNames).
 		Find(&gormTableColumns).Error
 	if err != nil {
 		return
