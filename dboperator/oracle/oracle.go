@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jasonlabz/dbutil/core/utils"
 	"strings"
 
+	"github.com/jasonlabz/dbutil/core/utils"
 	"github.com/jasonlabz/dbutil/dboperator"
 	"github.com/jasonlabz/dbutil/dbx"
 )
@@ -56,12 +56,14 @@ func (o OracleOperator) GetTableData(ctx context.Context, dbName, schemaName, ta
 		queryTable = fmt.Sprintf("\"%s\".\"%s\"", schemaName, tableName)
 	}
 	var count int64
-	err = db.DB.WithContext(ctx).
-		Table(queryTable).
-		Count(&count).
-		Offset(int(pageInfo.GetOffset())).
-		Limit(int(pageInfo.PageSize)).
-		Find(&rows).Error
+	tx := db.DB.WithContext(ctx).
+		Table(queryTable)
+	if pageInfo != nil {
+		tx = tx.Count(&count).
+			Offset(int(pageInfo.GetOffset())).
+			Limit(int(pageInfo.PageSize))
+	}
+	err = tx.Scan(&rows).Error
 	pageInfo.Total = count
 	pageInfo.SetPageCount()
 	return

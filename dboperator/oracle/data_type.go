@@ -43,9 +43,11 @@ func (o OracleOperator) Trans2CommonField(dataType string) *dboperator.Field {
 		default:
 			field.TimeType = "datetime"
 		}
-	case "clob", "nclob", "lob", "blob", "bfile":
+	case "clob", "nclob", "lob":
 		field = *dboperator.StringField
 		field.IsText = true
+	case "blob", "bfile":
+		field = *dboperator.BytesField
 	case "smallint":
 		field = *dboperator.Int16Field
 	case "pls_integer", "int", "integer", "binary_integer":
@@ -104,7 +106,7 @@ func (o OracleOperator) Trans2DataType(field *dboperator.Field) string {
 	case dboperator.BYTES:
 		fallthrough
 	case dboperator.RUNES:
-		return "blob"
+		return "BLOB"
 	case dboperator.INT8, dboperator.INT16:
 		if field.Precision == 0 {
 			return "SMALLINT"
@@ -151,7 +153,7 @@ func (o OracleOperator) Trans2DataType(field *dboperator.Field) string {
 		var timeType string
 		switch field.TimeType {
 		case "timestamp":
-			timeType = "timestamp"
+			timeType = "TIMESTAMP"
 		case "timestamptz":
 			return "TIMESTAMP WITH TIME ZONE"
 		case "timestampltz":

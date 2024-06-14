@@ -56,12 +56,14 @@ func (s SqlServerOperator) GetTableData(ctx context.Context, dbName, schemaName,
 		queryTable = fmt.Sprintf("\"%s\".\"%s\"", schemaName, tableName)
 	}
 	var count int64
-	err = db.DB.WithContext(ctx).
-		Table(queryTable).
-		Count(&count).
-		Offset(int(pageInfo.GetOffset())).
-		Limit(int(pageInfo.PageSize)).
-		Find(&rows).Error
+	tx := db.DB.WithContext(ctx).
+		Table(queryTable)
+	if pageInfo != nil {
+		tx = tx.Count(&count).
+			Offset(int(pageInfo.GetOffset())).
+			Limit(int(pageInfo.PageSize))
+	}
+	err = tx.Scan(&rows).Error
 	pageInfo.Total = count
 	pageInfo.SetPageCount()
 	return
