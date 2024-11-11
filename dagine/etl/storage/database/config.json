@@ -1,0 +1,22 @@
+{
+  "connections": [{
+    "name": "connA",
+    "type": "mysql",
+    "dsn": ""
+  }],
+  "data": [{
+    "connection": 0,
+    "table": "main_table",
+    "select": [],
+    "join": [{
+      "table": "sub_table",
+      "on": "sub_table.col1=main_table.col1"
+    }],
+    "select_join": {
+      "sub_table": []
+    },
+    "where": {
+      "main_table": "main_table.col2 = 1"
+    }
+  }]
+}

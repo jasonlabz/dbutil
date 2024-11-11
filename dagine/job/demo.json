@@ -1,0 +1,13 @@
+{
+  "setting": {
+    "speed": {
+      "parallel": 1,
+      "byteSize": 1024
+    }
+  },
+  "content": [{
+    "reader": {},
+    "writer": {},
+    "transformer": []
+  }]
+}

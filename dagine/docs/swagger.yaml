@@ -1,0 +1,159 @@
+basePath: /lg_server/api
+definitions:
+  base.Response:
+    properties:
+      code:
+        description: 错误码
+        type: integer
+      current_time:
+        description: 接口返回时间（当前时间）
+        type: string
+      data:
+        description: 返回数据
+      err_trace:
+        description: 错误追踪链路信息
+        type: string
+      message:
+        description: 错误信息
+        type: string
+      version:
+        description: 版本信息
+        type: string
+    type: object
+host: localhost:8630
+info:
+  contact:
+    email: 1783022886@qq.com
+    name: lucas
+    url: http://www.swagger.io/support
+  description: 旨在学习和娱乐的社交软件
+  title: 双鱼社交平台
+  version: "1.0"
+paths:
+  /health-check:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      summary: 健康检查
+      tags:
+      - 健康检查
+  /v1/demo/info:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: demo信息
+        in: body
+        name: update_info
+        required: true
+        schema:
+          $ref: '#/definitions/base.Response'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/base.Response'
+      summary: demo信息编辑
+      tags:
+      - demo相关接口
+  /v1/demo/info/{demo_id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: demoID
+        in: path
+        name: demo_id
+        required: true
+        type: string
+      - description: 0|1 登录|登出
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/base.Response'
+      summary: demo注销删除
+      tags:
+      - demo相关接口
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: demoID
+        in: path
+        name: demo_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            allOf:
+            - $ref: '#/definitions/base.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: 查询demo详情
+      tags:
+      - demo相关接口
+  /v1/demo/log_in_out/{demo_id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: demoID
+        in: path
+        name: demo_id
+        required: true
+        type: string
+      - description: 0|1 登录|登出
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/base.Response'
+      summary: demo登录&登出
+      tags:
+      - demo相关接口
+  /v1/demo/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: demo信息
+        in: body
+        name: demo_info
+        required: true
+        schema:
+          $ref: '#/definitions/base.Response'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/base.Response'
+      summary: demo注册
+      tags:
+      - demo相关接口
+swagger: "2.0"
