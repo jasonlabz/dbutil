@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 func TestBaseTable_Instance(t *testing.T) {

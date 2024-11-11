@@ -3,8 +3,8 @@ package mysql
 import (
 	"database/sql/driver"
 
-	"dagine/etl/storage/database"
 	"github.com/go-sql-driver/mysql"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func init() {

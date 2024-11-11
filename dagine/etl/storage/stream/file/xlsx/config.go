@@ -8,7 +8,7 @@ import (
 	"github.com/jasonlabz/potato/jsonutil"
 	"github.com/xuri/excelize/v2"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 // InConfig 输入xlsx配置

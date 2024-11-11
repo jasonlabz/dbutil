@@ -3,7 +3,7 @@ package demo
 import (
 	"sync"
 
-	"dagine/server/service"
+	"github.com/jasonlabz/dagine/server/service"
 )
 
 var svc *Service

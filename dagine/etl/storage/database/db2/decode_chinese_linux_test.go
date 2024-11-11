@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestScanner_Scan_Chinese(t *testing.T) {

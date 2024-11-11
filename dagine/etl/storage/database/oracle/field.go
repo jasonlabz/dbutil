@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
 	"github.com/godror/godror"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 	"github.com/shopspring/decimal"
 )
 

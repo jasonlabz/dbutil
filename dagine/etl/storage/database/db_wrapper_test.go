@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/schedule"
+	"github.com/jasonlabz/dagine/etl/schedule"
 )
 
 func OpenNoErr(name string, conf *jsonutil.JSON) *DBWrapper {

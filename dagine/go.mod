@@ -1,4 +1,4 @@
-module dagine
+module github.com/jasonlabz/dagine
 
 go 1.22.5
 

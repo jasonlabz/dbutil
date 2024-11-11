@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 
-	"dagine/etl/storage/database"
 	"github.com/ibmdb/go_ibm_db"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 	"github.com/pingcap/errors"
 )
 

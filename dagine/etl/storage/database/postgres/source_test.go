@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/storage/database"
 	_ "github.com/Breeze0806/go/database/pqto"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestDialect_Name(t *testing.T) {

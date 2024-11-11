@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 func testJSONFromString(json string) *jsonutil.JSON {

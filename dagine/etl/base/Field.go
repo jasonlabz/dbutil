@@ -7,8 +7,8 @@
 package base
 
 import (
-	"dagine/etl/element"
 	"github.com/bytedance/sonic"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 type Field struct {

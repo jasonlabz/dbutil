@@ -6,7 +6,7 @@ import (
 	"github.com/jasonlabz/potato/jsonutil"
 	"sync"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 	"github.com/pingcap/errors"
 )
 

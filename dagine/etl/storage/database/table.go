@@ -7,8 +7,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"dagine/etl/element"
-	"dagine/etl/schedule"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/schedule"
 )
 
 // Table 表结构

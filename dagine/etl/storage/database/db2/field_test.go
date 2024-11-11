@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 type mockFieldType struct {

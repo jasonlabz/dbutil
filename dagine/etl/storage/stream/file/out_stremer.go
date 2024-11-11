@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 	"github.com/jasonlabz/potato/jsonutil"
 	"github.com/pingcap/errors"
 )

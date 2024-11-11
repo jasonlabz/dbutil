@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 func TestBaseField_Name(t *testing.T) {

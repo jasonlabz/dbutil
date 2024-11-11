@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/stream/file/compress"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/stream/file/compress"
 	"github.com/jasonlabz/potato/jsonutil"
 )
 

@@ -9,8 +9,8 @@ package operator
 import (
 	"context"
 
-	"dagine/etl/base"
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/base"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 type Reader interface {

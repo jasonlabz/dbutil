@@ -3,7 +3,7 @@ package database
 import (
 	"sync"
 
-	"dagine/etl/schedule"
+	"github.com/jasonlabz/dagine/etl/schedule"
 	"github.com/jasonlabz/potato/jsonutil"
 	"github.com/pingcap/errors"
 )

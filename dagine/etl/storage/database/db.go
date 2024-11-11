@@ -6,7 +6,7 @@ import (
 	"database/sql/driver"
 	"strconv"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 	"github.com/pingcap/errors"
 )
 

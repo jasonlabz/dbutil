@@ -1,8 +1,8 @@
 package oracle
 
 import (
-	"dagine/etl/storage/database"
 	"github.com/godror/godror"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func init() {

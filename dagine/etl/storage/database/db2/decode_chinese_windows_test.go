@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 

@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"sync"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 var once sync.Once

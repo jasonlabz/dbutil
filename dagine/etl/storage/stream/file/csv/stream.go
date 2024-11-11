@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/stream/file"
-	"dagine/etl/storage/stream/file/compress"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/stream/file"
+	"github.com/jasonlabz/dagine/etl/storage/stream/file/compress"
 	"github.com/jasonlabz/potato/jsonutil"
 	"github.com/pingcap/errors"
 )

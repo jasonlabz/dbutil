@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"dagine/etl/storage/database"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 	"strings"
 )
 

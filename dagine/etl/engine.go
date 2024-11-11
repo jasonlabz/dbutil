@@ -8,8 +8,8 @@ package etl
 
 import (
 	"context"
-	"dagine/etl/errors"
-	"dagine/operator"
+	"github.com/jasonlabz/dagine/etl/errors"
+	"github.com/jasonlabz/dagine/operator"
 	"sync"
 )
 

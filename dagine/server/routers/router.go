@@ -6,9 +6,9 @@ import (
 	"github.com/jasonlabz/potato/configx"
 	"github.com/jasonlabz/potato/middleware"
 
-	_ "dagine/docs"
-	"dagine/server/controller"
-	"dagine/server/routers/v1/demo"
+	_ "github.com/jasonlabz/dagine/docs"
+	"github.com/jasonlabz/dagine/server/controller"
+	"github.com/jasonlabz/dagine/server/routers/v1/demo"
 )
 
 // InitApiRouter 封装路由

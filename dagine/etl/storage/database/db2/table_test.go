@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/storage/database"
 	"github.com/ibmdb/go_ibm_db"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestTable_Quoted(t *testing.T) {

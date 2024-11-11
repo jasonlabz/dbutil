@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/storage/database"
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func testJSONFromString(s string) *jsonutil.JSON {

@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
 	"github.com/godror/godror"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestNewTable(t *testing.T) {

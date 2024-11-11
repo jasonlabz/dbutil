@@ -16,9 +16,9 @@ import (
 	"github.com/jasonlabz/potato/configx"
 	"github.com/jasonlabz/potato/ginmetrics"
 
-	_ "dagine/bootstrap"
-	"dagine/common/consts"
-	"dagine/server/routers"
+	_ "github.com/jasonlabz/dagine/bootstrap"
+	"github.com/jasonlabz/dagine/common/consts"
+	"github.com/jasonlabz/dagine/server/routers"
 )
 
 // @title		ETL引擎框架服务

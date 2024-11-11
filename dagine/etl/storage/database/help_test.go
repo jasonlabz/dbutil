@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 type mockDialect struct {

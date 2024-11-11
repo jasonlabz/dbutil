@@ -1,7 +1,7 @@
 package db2
 
 import (
-	"dagine/etl/storage/database"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func init() {

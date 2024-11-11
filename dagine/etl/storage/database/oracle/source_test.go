@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/storage/database"
 	"github.com/godror/godror"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestDialect_Name(t *testing.T) {

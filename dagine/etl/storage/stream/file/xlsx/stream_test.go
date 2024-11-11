@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/element"
 )
 
 func Test_WriteRead(t *testing.T) {

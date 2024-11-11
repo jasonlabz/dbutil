@@ -7,9 +7,9 @@ import (
 	"reflect"
 	"testing"
 
-	"dagine/etl/element"
-	"dagine/etl/storage/database"
 	mssql "github.com/denisenkom/go-mssqldb"
+	"github.com/jasonlabz/dagine/etl/element"
+	"github.com/jasonlabz/dagine/etl/storage/database"
 )
 
 func TestTable_Quoted(t *testing.T) {
