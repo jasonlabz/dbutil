@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	dm "github.com/jasonlabz/gorm-dm-driver"
 	"github.com/jasonlabz/oracle"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -77,7 +78,7 @@ func InitConfig(config *Config) error {
 	case DBTypeSQLite:
 		dialect = sqlite.Open(config.DSN)
 	case DBTypeDM:
-		dialect = sqlite.Open(config.DSN)
+		dialect = dm.Open(config.DSN)
 	default:
 		return errors.New(fmt.Sprintf("unsupported dbType: %s", string(config.DBType)))
 	}
