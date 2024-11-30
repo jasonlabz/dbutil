@@ -177,8 +177,9 @@ func (s SQLiteOperator) GetColumns(ctx context.Context, dbName string) (dbTableC
 
 	for _, schemaTableInfo := range tableMap {
 		for _, tableInfo := range schemaTableInfo.TableInfoList {
-			db, err := dbx.GetDB(dbName)
-			if err != nil {
+			db, getErr := dbx.GetDB(dbName)
+			if getErr != nil {
+				err = getErr
 				return
 			}
 			err = db.DB.WithContext(ctx).
