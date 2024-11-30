@@ -76,6 +76,8 @@ func InitConfig(config *Config) error {
 		dialect = oracle.Open(config.DSN)
 	case DBTypeSQLite:
 		dialect = sqlite.Open(config.DSN)
+	case DBTypeDM:
+		dialect = sqlite.Open(config.DSN)
 	default:
 		return errors.New(fmt.Sprintf("unsupported dbType: %s", string(config.DBType)))
 	}

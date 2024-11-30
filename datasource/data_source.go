@@ -6,9 +6,11 @@ import (
 	"fmt"
 
 	"github.com/jasonlabz/dbutil/dboperator"
+	"github.com/jasonlabz/dbutil/dboperator/dm"
 	"github.com/jasonlabz/dbutil/dboperator/mysql"
 	"github.com/jasonlabz/dbutil/dboperator/oracle"
 	"github.com/jasonlabz/dbutil/dboperator/postgresql"
+	"github.com/jasonlabz/dbutil/dboperator/sqlite"
 	"github.com/jasonlabz/dbutil/dboperator/sqlserver"
 	"github.com/jasonlabz/dbutil/dbx"
 )
@@ -136,6 +138,16 @@ func init() {
 	}
 
 	err = RegisterDS(dbx.DBTypeSqlserver, sqlserver.NewSqlserverOperator())
+	if err != nil {
+		panic(err)
+	}
+
+	err = RegisterDS(dbx.DBTypeDM, dm.NewDMOperator())
+	if err != nil {
+		panic(err)
+	}
+
+	err = RegisterDS(dbx.DBTypeSQLite, sqlite.NewSQLiteOperator())
 	if err != nil {
 		panic(err)
 	}
